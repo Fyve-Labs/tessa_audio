@@ -32,8 +32,7 @@ bool ZmqPublisher::initialize() {
         pubSocket_ = std::make_unique<zmq::socket_t>(*context_, ZMQ_PUB);
         
         // Set linger period to 0 for clean exit
-        int linger = 0;
-        pubSocket_->setsockopt(ZMQ_LINGER, &linger, sizeof(linger));
+        pubSocket_->set(zmq::sockopt::linger, 0);
         
         // Bind socket to address
         pubSocket_->bind(address_);

@@ -41,8 +41,7 @@ bool ZmqHandler::initialize() {
         dealerSocket_ = std::make_unique<zmq::socket_t>(*context_, ZMQ_ROUTER);
         
         // Set linger period to 0 for clean exit
-        int linger = 0;
-        dealerSocket_->setsockopt(ZMQ_LINGER, &linger, sizeof(linger));
+        dealerSocket_->set(zmq::sockopt::linger, 0);
         
         // Bind socket to address
         dealerSocket_->bind(address_);
@@ -95,32 +94,43 @@ void ZmqHandler::handleLoop() {
     std::vector<zmq::pollitem_t> pollItems = {
         { static_cast<void*>(*dealerSocket_), 0, ZMQ_POLLIN, 0 }
     };
-    zmq::recv_result_t ret_val;
     
     while (running_) {
         try {
             // Poll with timeout to allow checking running_ flag
-            zmq::poll(pollItems.data(), pollItems.size(), 100);
+            zmq::poll(pollItems.data(), pollItems.size(), std::chrono::milliseconds(100));
             
             if (pollItems[0].revents & ZMQ_POLLIN) {
                 // Receive client identity frame
                 zmq::message_t identityMsg;
-                ret_val = dealerSocket_->recv(&identityMsg);
+                auto ret_val = dealerSocket_->recv(identityMsg);
+                if (!ret_val.has_value()) {
+                    continue; // Failed to receive identity
+                }
                 
                 // Receive empty delimiter frame
                 zmq::message_t delimiterMsg;
-                ret_val = dealerSocket_->recv(&delimiterMsg);
+                ret_val = dealerSocket_->recv(delimiterMsg);
+                if (!ret_val.has_value()) {
+                    continue; // Failed to receive delimiter
+                }
                 
                 // Receive topic frame
                 zmq::message_t topicMsg;
-                ret_val = dealerSocket_->recv(&topicMsg);
+                ret_val = dealerSocket_->recv(topicMsg);
+                if (!ret_val.has_value()) {
+                    continue; // Failed to receive topic
+                }
                 std::string receivedTopic(static_cast<char*>(topicMsg.data()), topicMsg.size());
                 
                 // Check topic
                 if (receivedTopic == topic_) {
                     // Receive command frame
                     zmq::message_t commandMsg;
-                    ret_val = dealerSocket_->recv(&commandMsg);
+                    ret_val = dealerSocket_->recv(commandMsg);
+                    if (!ret_val.has_value()) {
+                        continue; // Failed to receive command
+                    }
                     std::string command(static_cast<char*>(commandMsg.data()), commandMsg.size());
                     
                     // Parse command and arguments

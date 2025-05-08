@@ -134,20 +134,36 @@ protected:
                     try {
                         // Receive client identity
                         zmq::message_t identity;
-                        router.recv(identity);
+                        auto ret_val = router.recv(identity);
+                        if (!ret_val.has_value()) {
+                            std::cerr << "Failed to receive identity" << std::endl;
+                            continue;
+                        }
                         
                         // Receive empty delimiter
                         zmq::message_t delimiter;
-                        router.recv(delimiter);
+                        ret_val = router.recv(delimiter);
+                        if (!ret_val.has_value()) {
+                            std::cerr << "Failed to receive delimiter" << std::endl;
+                            continue;
+                        }
                         
                         // Receive topic
                         zmq::message_t topic;
-                        router.recv(topic);
+                        ret_val = router.recv(topic);
+                        if (!ret_val.has_value()) {
+                            std::cerr << "Failed to receive topic" << std::endl;
+                            continue;
+                        }
                         
                         // Receive command
                         zmq::message_t command;
-                        router.recv(command);
-                        
+                        ret_val = router.recv(command);
+                        if (!ret_val.has_value()) {
+                            std::cerr << "Failed to receive command" << std::endl;
+                            continue;
+                        }
+
                         std::string commandStr(static_cast<char*>(command.data()), command.size());
                         std::string response;
                         
@@ -222,12 +238,20 @@ TEST_F(ZmqConnectivityTest, CanSubscribeAndReceiveMessages) {
             try {
                 // Receive topic
                 zmq::message_t topicMsg;
-                subscriber.recv(topicMsg);
+                auto ret_val = subscriber.recv(topicMsg);
+                if (!ret_val.has_value()) {
+                    std::cerr << "Failed to receive topic" << std::endl;
+                    continue;
+                }
                 std::string topic(static_cast<char*>(topicMsg.data()), topicMsg.size());
                 
                 // Receive JSON message
                 zmq::message_t jsonMsg;
-                subscriber.recv(jsonMsg);
+                ret_val = subscriber.recv(jsonMsg);
+                if (!ret_val.has_value()) {
+                    std::cerr << "Failed to receive JSON message" << std::endl;
+                    continue;
+                }
                 std::string jsonString(static_cast<char*>(jsonMsg.data()), jsonMsg.size());
                 
                 // Check the topic
@@ -309,16 +333,28 @@ TEST_F(ZmqConnectivityTest, CanSendCommandsAndGetResponses) {
             try {
                 // First receive the empty delimiter from ROUTER
                 zmq::message_t delimiterMsg;
-                dealer.recv(delimiterMsg);
+                auto ret_val = dealer.recv(delimiterMsg);
+                if (!ret_val.has_value()) {
+                    std::cerr << "Failed to receive delimiter" << std::endl;
+                    continue;
+                }
                 
                 // Receive topic
                 zmq::message_t topicMsg;
-                dealer.recv(topicMsg);
+                ret_val = dealer.recv(topicMsg);
+                if (!ret_val.has_value()) {
+                    std::cerr << "Failed to receive topic" << std::endl;
+                    continue;
+                }
                 std::string recvTopic(static_cast<char*>(topicMsg.data()), topicMsg.size());
                 
                 // Receive response
                 zmq::message_t responseMsg;
-                dealer.recv(responseMsg);
+                ret_val = dealer.recv(responseMsg);
+                if (!ret_val.has_value()) {
+                    std::cerr << "Failed to receive response" << std::endl;
+                    continue;
+                }
                 std::string response(static_cast<char*>(responseMsg.data()), responseMsg.size());
                 
                 // Check response
