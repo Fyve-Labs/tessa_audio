@@ -20,7 +20,7 @@ target_link_libraries(tessa_audio_tests
   GTest::gmock_main
   tessa_audio_lib
   nlohmann_json::nlohmann_json
-  ${ZMQ_LIBRARIES}
+  ${ZeroMQ_LIBRARIES}
   ${PORTAUDIO_LIBRARIES}
   pthread
 )

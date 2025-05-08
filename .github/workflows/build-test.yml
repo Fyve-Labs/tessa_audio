@@ -34,47 +34,16 @@ jobs:
       artifact_name: ${{ steps.set-artifact-name.outputs.name }}
         
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     
-    - name: Install Dependencies (Ubuntu)
-      if: matrix.os == 'ubuntu-latest'
+    - name: Build and Test
       run: |
-        sudo apt-get update
-        sudo apt-get install -y libportaudio2 libportaudio-dev libzmq3-dev cmake build-essential
-    
-    - name: Install Dependencies (macOS)
-      if: matrix.os == 'macos-latest'
-      run: |
-        brew install portaudio zeromq cppzmq cmake
-    
-    - name: Create Build Environment
-      run: cmake -E make_directory ${{github.workspace}}/build
-      
-    - name: Update Version in CMakeLists.txt
-      if: inputs.update_version
-      run: |
-        sed -i.bak "s/project(tessa_audio VERSION [0-9]*\.[0-9]*\.[0-9]*)/project(tessa_audio VERSION ${{ inputs.version }})/g" CMakeLists.txt
-        cat CMakeLists.txt
-    
-    - name: Configure CMake
-      working-directory: ${{github.workspace}}/build
-      run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=${{ inputs.build_type }} -DBUILD_TESTING=ON
-    
-    - name: Build
-      working-directory: ${{github.workspace}}/build
-      run: cmake --build . --config ${{ inputs.build_type }}
-    
-    - name: Run Tests
-      working-directory: ${{github.workspace}}/build
-      # Tests that require audio devices might fail in CI, so we allow them to fail
-      continue-on-error: true
-      run: ctest -C ${{ inputs.build_type }} --output-on-failure
-      
-    - name: Verify Executable
-      working-directory: ${{github.workspace}}/build
-      run: |
-        ./tessa_audio --help
-        ./tessa_audio --list-devices || true  # Allow this to fail on CI runners
+        chmod +x scripts/build.sh
+        if [ "${{ inputs.update_version }}" = "true" ]; then
+          scripts/build.sh --build-type ${{ inputs.build_type }} --update-version ${{ inputs.version }} --update-version-h ${{ inputs.version }}
+        else
+          scripts/build.sh --build-type ${{ inputs.build_type }}
+        fi
     
     - name: Set Artifact Name
       id: set-artifact-name
@@ -91,9 +60,9 @@ jobs:
         fi
       
     - name: Upload Build Artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: ${{ steps.set-artifact-name.outputs.name }}
         path: |
-          ${{github.workspace}}/build/tessa_audio
-          ${{github.workspace}}/build/lib*tessa_audio* 
+          build/tessa_audio
+          build/lib*tessa_audio* 

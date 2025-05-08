@@ -17,6 +17,7 @@
 #include "zmq_handler.h"
 #include "device_manager.h"
 #include "message_format.h"
+#include "version.h"
 
 // Global flag for signal handling
 volatile std::sig_atomic_t gRunning = 1;
@@ -120,7 +121,8 @@ struct Arguments {
 };
 
 void printUsage(const char* programName) {
-    std::cout << "Usage: " << programName << " [options]\n"
+    std::cout << "Tessa Audio v" << tessa_audio::VERSION << "\n"
+              << "Usage: " << programName << " [options]\n"
               << "Options:\n"
               << "  --input-device <device_name>     Audio input device name\n"
               << "  --pub-address <address:port>     ZMQ PUB socket address (e.g., tcp://*:5555)\n"
@@ -267,6 +269,14 @@ void listAudioDevices() {
 }
 
 int main(int argc, char* argv[]) {
+    // Initialize PortAudio
+    Pa_Initialize();
+    
+    // Print version information
+    std::cout << "Tessa Audio v" << tessa_audio::VERSION 
+              << " (built: " << tessa_audio::BUILD_DATE << " " << tessa_audio::BUILD_TIME << ")" 
+              << std::endl;
+    
     Arguments args = parseArguments(argc, argv);
     
     // Register signal handler

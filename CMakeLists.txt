@@ -4,10 +4,12 @@ project(tessa_audio VERSION 0.1.0)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# Find required packages
-find_package(PkgConfig REQUIRED)
-pkg_check_modules(ZMQ REQUIRED libzmq)
+# Add custom CMake module path
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules")
+
+# Find required packages using our custom Find modules
 find_package(PortAudio REQUIRED)
+find_package(ZeroMQ REQUIRED)
 
 # Include nlohmann/json as a header-only library
 include(FetchContent)
@@ -20,7 +22,7 @@ FetchContent_MakeAvailable(json)
 # Include directories
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${ZMQ_INCLUDE_DIRS}
+    ${ZeroMQ_INCLUDE_DIRS}
     ${PORTAUDIO_INCLUDE_DIRS}
 )
 
@@ -36,7 +38,7 @@ set(LIB_SOURCES
 # Create a shared library
 add_library(tessa_audio_lib SHARED ${LIB_SOURCES})
 target_link_libraries(tessa_audio_lib
-    ${ZMQ_LIBRARIES}
+    ${ZeroMQ_LIBRARIES}
     ${PORTAUDIO_LIBRARIES}
     nlohmann_json::nlohmann_json
     pthread
