@@ -150,11 +150,11 @@ fi
 echo "Configuring with CMake (Build type: $BUILD_TYPE)"
 if [[ "$DRY_RUN" == true ]]; then
   echo "WOULD RUN: pushd \"$BUILD_DIR\" > /dev/null"
-  echo "WOULD RUN: cmake \"$WORKSPACE_DIR\" -DCMAKE_BUILD_TYPE=\"$BUILD_TYPE\" -DBUILD_TESTING=ON"
+  echo "WOULD RUN: cmake -S \"$WORKSPACE_DIR\" -B . -DCMAKE_BUILD_TYPE=\"$BUILD_TYPE\" -DBUILD_TESTING=ON"
   echo "WOULD RUN: popd > /dev/null"
 else
   pushd "$BUILD_DIR" > /dev/null
-  cmake "$WORKSPACE_DIR" -DCMAKE_BUILD_TYPE="$BUILD_TYPE" -DBUILD_TESTING=ON
+  cmake -S "$WORKSPACE_DIR" -B . -DCMAKE_BUILD_TYPE="$BUILD_TYPE" -DBUILD_TESTING=ON
   popd > /dev/null
 fi
 

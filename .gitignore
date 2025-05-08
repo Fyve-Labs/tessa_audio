@@ -2,6 +2,9 @@
 build/
 out/
 cmake-build-*/
+bin/
+*.tcl
+
 
 # IDE specific files
 .idea/
@@ -37,11 +40,11 @@ cmake-build-*/
 *.app
 
 # CMake
+**/Makefile
 CMakeCache.txt
 CMakeFiles/
-cmake_install.cmake
+**/*.cmake
 install_manifest.txt
-CTestTestfile.cmake
 compile_commands.json
 
 # Environment variables
