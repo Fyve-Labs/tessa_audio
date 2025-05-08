@@ -1,5 +1,5 @@
 # Set up googletest directly instead of using FetchContent
-set(GOOGLETEST_DIR "${CMAKE_CURRENT_BINARY_DIR}/googletest")
+set(GOOGLETEST_DIR "${TESSA_DEPS_DIR}/googletest")
 set(GOOGLETEST_INCLUDE_DIR "${GOOGLETEST_DIR}/include")
 set(GOOGLETEST_BIN_DIR "${GOOGLETEST_DIR}/bin")
 set(GOOGLETEST_LIB_DIR "${GOOGLETEST_DIR}/lib")
@@ -87,6 +87,12 @@ target_link_libraries(tessa_audio_tests
   pthread
 )
 
-# Add tests to CTest
+# Add tests to CTest with timeout to prevent hangs
 include(GoogleTest)
-gtest_discover_tests(tessa_audio_tests) 
+gtest_discover_tests(tessa_audio_tests 
+                    PROPERTIES 
+                    TIMEOUT 30
+                    ENVIRONMENT "GTEST_OUTPUT=xml:${CMAKE_BINARY_DIR}/test-results/")
+
+# Create directory for test results
+file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/test-results") 

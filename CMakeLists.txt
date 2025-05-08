@@ -10,6 +10,10 @@ cmake_policy(SET CMP0135 NEW) # Use timestamps from extraction time for download
 # Add custom CMake module path
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules")
 
+# Set build directory structure
+set(TESSA_DEPS_DIR "${CMAKE_BINARY_DIR}/deps")
+file(MAKE_DIRECTORY ${TESSA_DEPS_DIR})
+
 # Find required packages using our custom Find modules
 find_package(PortAudio REQUIRED)
 find_package(ZeroMQ REQUIRED)
@@ -22,7 +26,7 @@ include_directories(
 )
 
 # Handle nlohmann/json directly instead of using FetchContent
-set(JSON_INCLUDE_DIR "${CMAKE_CURRENT_BINARY_DIR}/json_include")
+set(JSON_INCLUDE_DIR "${TESSA_DEPS_DIR}/json_include")
 file(MAKE_DIRECTORY "${JSON_INCLUDE_DIR}/nlohmann")
 
 if(NOT EXISTS "${JSON_INCLUDE_DIR}/nlohmann/json.hpp")
@@ -61,6 +65,7 @@ target_link_libraries(tessa_audio tessa_audio_lib)
 # Enable testing if we're the main project
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
     include(CTest)
+    set(CTEST_OUTPUT_ON_FAILURE ON)
     if(BUILD_TESTING)
         add_subdirectory(tests)
     endif()

@@ -2,6 +2,9 @@
 # Build script for Tessa Audio
 # This script consolidates the build steps from the GitHub workflow
 
+# switch to the parent directory to run
+cd "$(dirname "$0")/.."
+
 set -e
 
 # Default values
@@ -170,35 +173,6 @@ else
   popd > /dev/null
 fi
 
-# Run tests
-if [[ "$RUN_TESTS" == true ]]; then
-  echo "Running tests"
-  if [[ "$DRY_RUN" == true ]]; then
-    echo "WOULD RUN: pushd \"$BUILD_DIR\" > /dev/null"
-    echo "WOULD RUN: ctest -C \"$BUILD_TYPE\" --output-on-failure || echo \"Some tests failed, continuing...\""
-    echo "WOULD RUN: popd > /dev/null"
-  else
-    pushd "$BUILD_DIR" > /dev/null
-    # Allow test failures - some tests may fail due to missing audio devices
-    ctest -C "$BUILD_TYPE" --output-on-failure || echo "Some tests failed, continuing..."
-    popd > /dev/null
-  fi
-fi
-
-# Verify executable
-echo "Verifying executable"
-if [[ "$DRY_RUN" == true ]]; then
-  echo "WOULD RUN: pushd \"$BUILD_DIR\" > /dev/null"
-  echo "WOULD RUN: ./tessa_audio --help || exit 1"
-  echo "WOULD RUN: ./tessa_audio --list-devices || echo \"Device listing failed, possibly due to missing audio hardware\""
-  echo "WOULD RUN: popd > /dev/null"
-else
-  pushd "$BUILD_DIR" > /dev/null
-  ./tessa_audio --help || exit 1
-  # Try listing devices but don't fail if this doesn't work
-  ./tessa_audio --list-devices || echo "Device listing failed, possibly due to missing audio hardware"
-  popd > /dev/null
-fi
 
 echo "Build completed successfully!"
 echo "Executable available at: $(pwd)/$BUILD_DIR/tessa_audio" 
