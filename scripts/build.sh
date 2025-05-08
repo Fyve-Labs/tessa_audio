@@ -86,12 +86,13 @@ if [[ "$OSTYPE" == "linux-gnu"* ]]; then
   # Check if we have sudo access
   if command -v sudo &> /dev/null; then
     echo "Installing dependencies for Ubuntu/Debian..."
+    LIBSET="libportaudio2 libportaudio-dev libzmq3-dev cmake build-essential"
     if [[ "$DRY_RUN" == true ]]; then
       echo "WOULD RUN: sudo apt-get update"
-      echo "WOULD RUN: sudo apt-get install -y libportaudio2 libportaudio-dev libzmq3-dev cmake build-essential"
+      echo "WOULD RUN: sudo apt-get install -y $LIBSET"
     else
       sudo apt-get update
-      sudo apt-get install -y libportaudio2 libportaudio-dev libzmq3-dev cmake build-essential
+      sudo apt-get install -y $LIBSET
     fi
   else
     echo "WARNING: Cannot install dependencies without sudo access."

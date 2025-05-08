@@ -39,11 +39,54 @@ jobs:
         chmod +x scripts/update-version.sh
         scripts/update-version.sh ${{ steps.semantic.outputs.new_version }}
         
+    - name: Verify Version Update in Header File
+      if: steps.semantic.outputs.new_version != ''
+      run: |
+        # Extract version from header file
+        HEADER_VERSION=$(grep "constexpr const char\* VERSION = " include/version.h | cut -d '"' -f 2)
+        echo "Version in header file: $HEADER_VERSION"
+        echo "Expected version: ${{ steps.semantic.outputs.new_version }}"
+        
+        # Verify version has been correctly updated
+        if [ "$HEADER_VERSION" != "${{ steps.semantic.outputs.new_version }}" ]; then
+          echo "Error: Version in header file does not match expected version"
+          exit 1
+        fi
+        
+        # Verify major, minor, patch versions
+        IFS='.' read -r EXPECTED_MAJOR EXPECTED_MINOR EXPECTED_PATCH <<< "${{ steps.semantic.outputs.new_version }}"
+        
+        HEADER_MAJOR=$(grep "VERSION_MAJOR = " include/version.h | grep -o '[0-9]\+')
+        HEADER_MINOR=$(grep "VERSION_MINOR = " include/version.h | grep -o '[0-9]\+')
+        HEADER_PATCH=$(grep "VERSION_PATCH = " include/version.h | grep -o '[0-9]\+')
+        
+        if [ "$HEADER_MAJOR" != "$EXPECTED_MAJOR" ] || [ "$HEADER_MINOR" != "$EXPECTED_MINOR" ] || [ "$HEADER_PATCH" != "$EXPECTED_PATCH" ]; then
+          echo "Error: Major, minor, or patch version in header file does not match expected values"
+          exit 1
+        fi
+        
+        echo "Version verification successful"
+        
+    - name: Generate Changelog
+      id: changelog
+      if: steps.semantic.outputs.new_version != ''
+      uses: janheinrichmerker/action-github-changelog-generator@v2.4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        output: CHANGELOG.md
+        futureRelease: ${{ steps.semantic.outputs.new_version }}
+        issues: true
+        issuesWoLabels: true
+        pullRequests: true
+        prWoLabels: true
+        author: true
+        compareLink: true
+        
     - name: Commit and Push Version Update
       if: steps.semantic.outputs.new_version != ''
       run: |
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
-        git add include/version.h
+        git add include/version.h CHANGELOG.md
         git commit -m "chore: update version to ${{ steps.semantic.outputs.new_version }}" || echo "No changes to commit"
         git push 
