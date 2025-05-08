@@ -1,0 +1,84 @@
+name: Main Branch
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  version:
+    name: Bump Version
+    runs-on: ubuntu-latest
+    outputs:
+      new_version: ${{ steps.semantic.outputs.new_version }}
+      new_tag: ${{ steps.semantic.outputs.new_tag }}
+      
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+        
+    - name: Semantic Versioning
+      id: semantic
+      uses: mathieudutour/github-tag-action@v6.1
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        default_bump: patch
+        release_branches: main
+        
+  build-and-test:
+    name: Build and Test
+    needs: version
+    uses: ./.github/workflows/build-test.yml
+    with:
+      build_type: 'Release'
+      update_version: true
+      version: ${{ needs.version.outputs.new_version }}
+          
+  release:
+    name: Create Release
+    needs: [version, build-and-test]
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Download All Artifacts
+      uses: actions/download-artifact@v3
+      with:
+        path: artifacts
+        
+    - name: Prepare Release Files
+      run: |
+        mkdir -p release
+        cp -r artifacts/tessa-audio-ubuntu-latest-v${{ needs.version.outputs.new_version }}/* release/
+        cp -r artifacts/tessa-audio-macos-latest-v${{ needs.version.outputs.new_version }}/* release/
+        cd release
+        chmod +x tessa_audio || true
+        tar -czvf tessa-audio-ubuntu-v${{ needs.version.outputs.new_version }}.tar.gz libtessa_audio_lib.so tessa_audio || true
+        tar -czvf tessa-audio-macos-v${{ needs.version.outputs.new_version }}.tar.gz libtessa_audio_lib.dylib tessa_audio || true
+        ls -la
+      
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: ${{ needs.version.outputs.new_tag }}
+        name: Release ${{ needs.version.outputs.new_tag }}
+        files: |
+          release/tessa-audio-ubuntu-v${{ needs.version.outputs.new_version }}.tar.gz
+          release/tessa-audio-macos-v${{ needs.version.outputs.new_version }}.tar.gz
+        body: |
+          # Tessa Audio v${{ needs.version.outputs.new_version }}
+          
+          Automatically generated release from main branch.
+          
+          ## Artifacts
+          - Ubuntu binary and library
+          - macOS binary and library
+          
+          ## Installation
+          
+          Extract the archive for your platform and run:
+          ```bash
+          ./tessa_audio --help
+          ```
+        generate_release_notes: true 
