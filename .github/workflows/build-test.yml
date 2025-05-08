@@ -18,6 +18,11 @@ on:
         required: false
         default: ''
         type: string
+      with_coverage:
+        description: 'Whether to generate code coverage reports'
+        required: false
+        default: false
+        type: boolean
     outputs:
       artifact_name:
         description: "Name of the uploaded artifact"
@@ -36,13 +41,34 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     
+    - name: Install Coverage Tools (Linux)
+      if: ${{ inputs.with_coverage && matrix.os == 'ubuntu-latest' }}
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y lcov
+    
+    - name: Install Coverage Tools (macOS)
+      if: ${{ inputs.with_coverage && matrix.os == 'macos-latest' }}
+      run: |
+        brew install lcov
+    
     - name: Build and Test
       run: |
         chmod +x scripts/build.sh
         if [ "${{ inputs.update_version }}" = "true" ]; then
           scripts/build.sh --build-type ${{ inputs.build_type }} --update-version ${{ inputs.version }} --update-version-h ${{ inputs.version }}
+          if [ "${{ inputs.with_coverage }}" = "true" ]; then
+            scripts/test.sh --build-type ${{ inputs.build_type }} --coverage
+          else
+            scripts/test.sh --build-type ${{ inputs.build_type }}
+          fi
         else
           scripts/build.sh --build-type ${{ inputs.build_type }}
+          if [ "${{ inputs.with_coverage }}" = "true" ]; then
+            scripts/test.sh --build-type ${{ inputs.build_type }} --coverage
+          else
+            scripts/test.sh --build-type ${{ inputs.build_type }}
+          fi
         fi
     
     - name: Set Artifact Name
@@ -65,4 +91,27 @@ jobs:
         name: ${{ steps.set-artifact-name.outputs.name }}
         path: |
           build/tessa_audio
-          build/lib*tessa_audio* 
+          build/lib*tessa_audio*
+    
+    - name: Upload Coverage Reports
+      if: ${{ inputs.with_coverage }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ steps.set-artifact-name.outputs.name }}-coverage
+        path: |
+          build/coverage/
+    
+    - name: Display Coverage Summary
+      if: ${{ inputs.with_coverage }}
+      run: |
+        if [ -f "build/coverage/coverage_summary.md" ]; then
+          echo "::group::Code Coverage Summary"
+          cat build/coverage/coverage_summary.md
+          echo "::endgroup::"
+        elif [ -f "build/coverage/basic_coverage_summary.md" ]; then
+          echo "::group::Basic Code Coverage Summary"
+          cat build/coverage/basic_coverage_summary.md
+          echo "::endgroup::"
+        else
+          echo "No coverage summary found"
+        fi 

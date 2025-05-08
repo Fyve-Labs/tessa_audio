@@ -14,6 +14,20 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/mo
 set(TESSA_DEPS_DIR "${CMAKE_BINARY_DIR}/deps")
 file(MAKE_DIRECTORY ${TESSA_DEPS_DIR})
 
+# Code coverage option
+option(CODE_COVERAGE "Enable code coverage reporting" OFF)
+if(CODE_COVERAGE AND CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    # Add coverage flags
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -g --coverage")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} --coverage")
+    
+    # Set output directories for coverage data
+    set(COVERAGE_REPORT_DIR "${CMAKE_BINARY_DIR}/coverage")
+    file(MAKE_DIRECTORY ${COVERAGE_REPORT_DIR})
+    
+    message(STATUS "Code coverage enabled")
+endif()
+
 # Find required packages using our custom Find modules
 find_package(PortAudio REQUIRED)
 find_package(ZeroMQ REQUIRED)

@@ -10,4 +10,5 @@ jobs:
     uses: ./.github/workflows/build-test.yml
     with:
       build_type: 'Release'
-      update_version: false 
+      update_version: false
+      with_coverage: true
