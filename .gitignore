@@ -43,9 +43,11 @@ bin/
 **/Makefile
 CMakeCache.txt
 CMakeFiles/
-**/*.cmake
 install_manifest.txt
 compile_commands.json
+**/cmake_install.cmake
+**/CTestTestfile.cmake
+**/*_include.cmake
 
 # Environment variables
 .env

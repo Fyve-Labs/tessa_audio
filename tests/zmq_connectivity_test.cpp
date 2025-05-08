@@ -75,24 +75,25 @@ protected:
                 publisher.send(jsonMessage, zmq::send_flags::none);
                 
                 // Poll for commands on the router socket (with timeout)
-                zmq::poll(&items[0], 1, 100);
+                zmq::poll(&items[0], 1, std::chrono::duration<int>(100));
                 
                 if (items[0].revents & ZMQ_POLLIN) {
                     // Receive client identity
                     zmq::message_t identity;
-                    router.recv(identity);
+                    zmq::recv_result_t ret_val;
+                    ret_val = router.recv(identity);
                     
                     // Receive empty delimiter
                     zmq::message_t delimiter;
-                    router.recv(delimiter);
+                    ret_val = router.recv(delimiter);
                     
                     // Receive topic
                     zmq::message_t topic;
-                    router.recv(topic);
+                    ret_val = router.recv(topic);
                     
                     // Receive command
                     zmq::message_t command;
-                    router.recv(command);
+                    ret_val = router.recv(command);
                     
                     std::string commandStr(static_cast<char*>(command.data()), command.size());
                     std::string response;
@@ -145,21 +146,22 @@ TEST_F(ZmqConnectivityTest, CanSubscribeAndReceiveMessages) {
     bool messageReceived = false;
     auto startTime = std::chrono::steady_clock::now();
     auto timeout = std::chrono::seconds(5);
+    zmq::recv_result_t ret_val;
     
     while (!messageReceived && 
            (std::chrono::steady_clock::now() - startTime < timeout)) {
         
-        zmq::poll(&items[0], 1, 500);
+        zmq::poll(&items[0], 1, std::chrono::duration<int>(500));
         
         if (items[0].revents & ZMQ_POLLIN) {
             // Receive topic
             zmq::message_t topicMsg;
-            subscriber.recv(topicMsg);
+            ret_val = subscriber.recv(topicMsg);
             std::string topic(static_cast<char*>(topicMsg.data()), topicMsg.size());
             
             // Receive JSON message
             zmq::message_t jsonMsg;
-            subscriber.recv(jsonMsg);
+            ret_val = subscriber.recv(jsonMsg);
             std::string jsonString(static_cast<char*>(jsonMsg.data()), jsonMsg.size());
             
             // Check the topic
@@ -207,21 +209,22 @@ TEST_F(ZmqConnectivityTest, CanSendCommandsAndGetResponses) {
     bool responseReceived = false;
     auto startTime = std::chrono::steady_clock::now();
     auto timeout = std::chrono::seconds(5);
-    
+    zmq::recv_result_t ret_val;
+
     while (!responseReceived && 
            (std::chrono::steady_clock::now() - startTime < timeout)) {
         
-        zmq::poll(&items[0], 1, 500);
+        zmq::poll(&items[0], 1, std::chrono::duration<int>(500));
         
         if (items[0].revents & ZMQ_POLLIN) {
             // Receive topic
             zmq::message_t topicMsg;
-            dealer.recv(topicMsg);
+            ret_val = dealer.recv(topicMsg);
             std::string recvTopic(static_cast<char*>(topicMsg.data()), topicMsg.size());
             
             // Receive response
             zmq::message_t responseMsg;
-            dealer.recv(responseMsg);
+            ret_val = dealer.recv(responseMsg);
             std::string response(static_cast<char*>(responseMsg.data()), responseMsg.size());
             
             // Check response

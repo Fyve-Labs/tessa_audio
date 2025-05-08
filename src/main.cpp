@@ -96,7 +96,7 @@ std::string optionToEnvVar(const std::string& option) {
     std::transform(result.begin(), result.end(), result.begin(), 
         [](unsigned char c) { 
             if (c == '-') return '_'; 
-            return std::toupper(c);
+            return (char)(std::toupper(c));
         });
     
     return result;

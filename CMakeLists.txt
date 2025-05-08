@@ -43,6 +43,7 @@ set(LIB_SOURCES
     src/zmq_handler.cpp
     src/audio_buffer.cpp
     src/device_manager.cpp
+    src/message_format.cpp
 )
 
 # Create a shared library

@@ -110,17 +110,17 @@ void ZmqPublisher::publishAudioData(const std::vector<uint8_t>& data, uint64_t t
         // Send topic frame
         zmq::message_t topicMsg(topic_.size());
         memcpy(topicMsg.data(), topic_.data(), topic_.size());
-        pubSocket_->send(topicMsg, ZMQ_SNDMORE);
+        pubSocket_->send(topicMsg, zmq::send_flags::sndmore);
         
         // Send JSON message
         zmq::message_t jsonMessage(jsonString.size());
         memcpy(jsonMessage.data(), jsonString.data(), jsonString.size());
-        pubSocket_->send(jsonMessage, ZMQ_SNDMORE);
+        pubSocket_->send(jsonMessage, zmq::send_flags::sndmore);
         
         // Send binary payload
         zmq::message_t dataMsg(data.size());
         memcpy(dataMsg.data(), data.data(), data.size());
-        pubSocket_->send(dataMsg, 0);
+        pubSocket_->send(dataMsg, zmq::send_flags::none);
         
     } catch (const zmq::error_t& e) {
         std::cerr << "ZMQ send error: " << e.what() << std::endl;
@@ -159,12 +159,12 @@ void ZmqPublisher::publishStatusMessage(const std::map<std::string, nlohmann::js
         // Send topic frame
         zmq::message_t topicMsg(topic_.size());
         memcpy(topicMsg.data(), topic_.data(), topic_.size());
-        pubSocket_->send(topicMsg, ZMQ_SNDMORE);
+        pubSocket_->send(topicMsg, zmq::send_flags::sndmore);
         
         // Send JSON message
         zmq::message_t jsonMessage(jsonString.size());
         memcpy(jsonMessage.data(), jsonString.data(), jsonString.size());
-        pubSocket_->send(jsonMessage, 0);
+        pubSocket_->send(jsonMessage, zmq::send_flags::none);
         
     } catch (const zmq::error_t& e) {
         std::cerr << "ZMQ send error: " << e.what() << std::endl;

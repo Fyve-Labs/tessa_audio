@@ -61,6 +61,14 @@ set_target_properties(GTest::gmock_main PROPERTIES
 # Enable testing
 enable_testing()
 
+# Add include directories for tests
+include_directories(
+    ${CMAKE_SOURCE_DIR}/include
+    ${JSON_INCLUDE_DIR}
+    ${ZeroMQ_INCLUDE_DIRS}
+    ${PORTAUDIO_INCLUDE_DIRS}
+)
+
 # Set up the test executable
 add_executable(tessa_audio_tests
   zmq_connectivity_test.cpp
@@ -69,16 +77,15 @@ add_executable(tessa_audio_tests
 
 # Link against gtest & project libraries
 target_link_libraries(tessa_audio_tests
+  tessa_audio_lib
+  GTest::gtest
+  GTest::gmock
   GTest::gtest_main
   GTest::gmock_main
-  tessa_audio_lib
   ${ZeroMQ_LIBRARIES}
   ${PORTAUDIO_LIBRARIES}
   pthread
 )
-
-# Add include directory for json
-target_include_directories(tessa_audio_tests PRIVATE ${JSON_INCLUDE_DIR})
 
 # Add tests to CTest
 include(GoogleTest)

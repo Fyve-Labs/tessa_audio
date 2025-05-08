@@ -95,6 +95,7 @@ void ZmqHandler::handleLoop() {
     std::vector<zmq::pollitem_t> pollItems = {
         { static_cast<void*>(*dealerSocket_), 0, ZMQ_POLLIN, 0 }
     };
+    zmq::recv_result_t ret_val;
     
     while (running_) {
         try {
@@ -104,22 +105,22 @@ void ZmqHandler::handleLoop() {
             if (pollItems[0].revents & ZMQ_POLLIN) {
                 // Receive client identity frame
                 zmq::message_t identityMsg;
-                dealerSocket_->recv(&identityMsg);
+                ret_val = dealerSocket_->recv(&identityMsg);
                 
                 // Receive empty delimiter frame
                 zmq::message_t delimiterMsg;
-                dealerSocket_->recv(&delimiterMsg);
+                ret_val = dealerSocket_->recv(&delimiterMsg);
                 
                 // Receive topic frame
                 zmq::message_t topicMsg;
-                dealerSocket_->recv(&topicMsg);
+                ret_val = dealerSocket_->recv(&topicMsg);
                 std::string receivedTopic(static_cast<char*>(topicMsg.data()), topicMsg.size());
                 
                 // Check topic
                 if (receivedTopic == topic_) {
                     // Receive command frame
                     zmq::message_t commandMsg;
-                    dealerSocket_->recv(&commandMsg);
+                    ret_val = dealerSocket_->recv(&commandMsg);
                     std::string command(static_cast<char*>(commandMsg.data()), commandMsg.size());
                     
                     // Parse command and arguments
@@ -144,18 +145,18 @@ void ZmqHandler::handleLoop() {
                     }
                     
                     // Send DEALER response back to client
-                    dealerSocket_->send(identityMsg, ZMQ_SNDMORE);  // Client identity
-                    dealerSocket_->send(delimiterMsg, ZMQ_SNDMORE); // Empty delimiter
+                    dealerSocket_->send(identityMsg, zmq::send_flags::sndmore);  // Client identity
+                    dealerSocket_->send(delimiterMsg, zmq::send_flags::sndmore); // Empty delimiter
                     
                     // Send topic frame
                     zmq::message_t responseTopicMsg(topic_.size());
                     memcpy(responseTopicMsg.data(), topic_.data(), topic_.size());
-                    dealerSocket_->send(responseTopicMsg, ZMQ_SNDMORE);
+                    dealerSocket_->send(responseTopicMsg, zmq::send_flags::sndmore);
                     
                     // Send response frame
                     zmq::message_t responseMsg(response.size());
                     memcpy(responseMsg.data(), response.data(), response.size());
-                    dealerSocket_->send(responseMsg, 0);
+                    dealerSocket_->send(responseMsg, zmq::send_flags::none);
                 }
             }
         } catch (const zmq::error_t& e) {
