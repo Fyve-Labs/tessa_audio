@@ -4,7 +4,10 @@ out/
 cmake-build-*/
 bin/
 *.tcl
+deps/
 
+tessa_audio
+tests/tessa_audio_tests*
 
 # IDE specific files
 .idea/

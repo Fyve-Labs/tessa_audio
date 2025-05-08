@@ -16,6 +16,7 @@ UPDATE_VERSION=false
 NEW_VERSION=""
 UPDATE_VERSION_H=false
 DRY_RUN=false
+TOOLCHAIN_FILE=""
 
 # Parse command line arguments
 while [[ $# -gt 0 ]]; do
@@ -46,6 +47,10 @@ while [[ $# -gt 0 ]]; do
       DRY_RUN=true
       shift
       ;;
+    --toolchain-file)
+      TOOLCHAIN_FILE="$2"
+      shift 2
+      ;;
     --help)
       echo "Usage: $0 [options]"
       echo "Options:"
@@ -54,6 +59,7 @@ while [[ $# -gt 0 ]]; do
       echo "  --no-tests            Skip running tests"
       echo "  --update-version VER  Update version in CMakeLists.txt (e.g., 1.0.0)"
       echo "  --update-version-h VER Update version in version.h (e.g., 1.0.0)"
+      echo "  --toolchain-file FILE Path to CMake toolchain file for cross-compilation"
       echo "  --dry-run             Show commands without executing them"
       echo "  --help                Show this help message"
       exit 0
@@ -78,48 +84,54 @@ run_cmd() {
   fi
 }
 
-# Detect OS for installing dependencies
-if [[ "$OSTYPE" == "linux-gnu"* ]]; then
-  echo "Detected Linux system"
-  OS_TYPE="linux"
-  
-  # Check if we have sudo access
-  if command -v sudo &> /dev/null; then
-    echo "Installing dependencies for Ubuntu/Debian..."
-    LIBSET="libportaudio2 libportaudio-dev libzmq3-dev cmake build-essential"
-    if [[ "$DRY_RUN" == true ]]; then
-      echo "WOULD RUN: sudo apt-get update"
-      echo "WOULD RUN: sudo apt-get install -y $LIBSET"
+# Only install dependencies if not cross-compiling
+if [[ -z "$TOOLCHAIN_FILE" ]]; then
+  # Detect OS for installing dependencies
+  if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+    echo "Detected Linux system"
+    OS_TYPE="linux"
+    
+    # Check if we have sudo access
+    if command -v sudo &> /dev/null; then
+      echo "Installing dependencies for Ubuntu/Debian..."
+      LIBSET="libportaudio2 libportaudio-dev libzmq3-dev cmake build-essential"
+      if [[ "$DRY_RUN" == true ]]; then
+        echo "WOULD RUN: sudo apt-get update"
+        echo "WOULD RUN: sudo apt-get install -y $LIBSET"
+      else
+        sudo apt-get update
+        sudo apt-get install -y $LIBSET
+      fi
     else
-      sudo apt-get update
-      sudo apt-get install -y $LIBSET
+      echo "WARNING: Cannot install dependencies without sudo access."
+      echo "Please make sure the following packages are installed:"
+      echo "  libportaudio2 libportaudio-dev libzmq3-dev cmake build-essential"
+    fi
+  elif [[ "$OSTYPE" == "darwin"* ]]; then
+    echo "Detected macOS system"
+    OS_TYPE="macos"
+    
+    # Check if Homebrew is installed
+    if command -v brew &> /dev/null; then
+      echo "Installing dependencies with Homebrew..."
+      if [[ "$DRY_RUN" == true ]]; then
+        echo "WOULD RUN: brew install portaudio zeromq cppzmq cmake"
+      else
+        brew install portaudio zeromq cppzmq cmake
+      fi
+    else
+      echo "WARNING: Homebrew not found. Cannot install dependencies."
+      echo "Please make sure the following packages are installed:"
+      echo "  portaudio zeromq cppzmq cmake"
     fi
   else
-    echo "WARNING: Cannot install dependencies without sudo access."
-    echo "Please make sure the following packages are installed:"
-    echo "  libportaudio2 libportaudio-dev libzmq3-dev cmake build-essential"
-  fi
-elif [[ "$OSTYPE" == "darwin"* ]]; then
-  echo "Detected macOS system"
-  OS_TYPE="macos"
-  
-  # Check if Homebrew is installed
-  if command -v brew &> /dev/null; then
-    echo "Installing dependencies with Homebrew..."
-    if [[ "$DRY_RUN" == true ]]; then
-      echo "WOULD RUN: brew install portaudio zeromq cppzmq cmake"
-    else
-      brew install portaudio zeromq cppzmq cmake
-    fi
-  else
-    echo "WARNING: Homebrew not found. Cannot install dependencies."
-    echo "Please make sure the following packages are installed:"
-    echo "  portaudio zeromq cppzmq cmake"
+    echo "Unsupported OS: $OSTYPE"
+    echo "This script currently supports Linux and macOS"
+    exit 1
   fi
 else
-  echo "Unsupported OS: $OSTYPE"
-  echo "This script currently supports Linux and macOS"
-  exit 1
+  echo "Cross-compiling with toolchain: $TOOLCHAIN_FILE"
+  # Skip dependency installation when cross-compiling
 fi
 
 # Create build directory
@@ -152,13 +164,21 @@ fi
 
 # Configure with CMake
 echo "Configuring with CMake (Build type: $BUILD_TYPE)"
+CMAKE_ARGS="-S \"$WORKSPACE_DIR\" -B . -DCMAKE_BUILD_TYPE=\"$BUILD_TYPE\" -DBUILD_TESTING=ON"
+
+# Add toolchain file if specified
+if [[ -n "$TOOLCHAIN_FILE" ]]; then
+  CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_TOOLCHAIN_FILE=\"$TOOLCHAIN_FILE\""
+fi
+
 if [[ "$DRY_RUN" == true ]]; then
   echo "WOULD RUN: pushd \"$BUILD_DIR\" > /dev/null"
-  echo "WOULD RUN: cmake -S \"$WORKSPACE_DIR\" -B . -DCMAKE_BUILD_TYPE=\"$BUILD_TYPE\" -DBUILD_TESTING=ON"
+  echo "WOULD RUN: cmake $CMAKE_ARGS"
   echo "WOULD RUN: popd > /dev/null"
 else
   pushd "$BUILD_DIR" > /dev/null
-  cmake -S "$WORKSPACE_DIR" -B . -DCMAKE_BUILD_TYPE="$BUILD_TYPE" -DBUILD_TESTING=ON
+  # Using eval to handle the quotes in CMAKE_ARGS
+  eval cmake $CMAKE_ARGS
   popd > /dev/null
 fi
 
