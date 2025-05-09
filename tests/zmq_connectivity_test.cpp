@@ -7,7 +7,7 @@
 #include <atomic>
 #include <string>
 #include <random>
-#include "message_format.h"
+#include "message_format.hpp"
 
 // Helper function to generate random high ports to avoid conflicts
 static int getRandomHighPort() {

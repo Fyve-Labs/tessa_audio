@@ -1,4 +1,4 @@
-#include "zmq_publisher.h"
+#include "zmq_publisher.hpp"
 #include <iostream>
 #include <chrono>
 #include <cstring>

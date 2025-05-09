@@ -3,7 +3,7 @@
 #include <iostream>
 #include <vector>
 #include <portaudio.h>
-#include "device_manager.h"
+#include "device_manager.hpp"
 
 // Test fixture for device listing tests
 class DeviceListingTest : public ::testing::Test {

@@ -6,7 +6,7 @@
 #include <memory>
 #include <functional>
 #include <portaudio.h>
-#include "audio_buffer.h"
+#include "audio_buffer.hpp"
 
 class AudioCapture {
 public:

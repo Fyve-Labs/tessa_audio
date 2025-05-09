@@ -7,9 +7,9 @@
 #include <atomic>
 #include <memory>
 #include <zmq.hpp>
-#include "audio_buffer.h"
-#include "audio_capture.h"
-#include "message_format.h"
+#include "audio_buffer.hpp"
+#include "audio_capture.hpp"
+#include "message_format.hpp"
 
 class ZmqPublisher {
 public:

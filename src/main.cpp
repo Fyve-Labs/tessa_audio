@@ -12,11 +12,11 @@
 #include <algorithm>
 #include <cstdlib>
 
-#include "audio_capture.h"
-#include "zmq_publisher.h"
-#include "zmq_handler.h"
-#include "device_manager.h"
-#include "message_format.h"
+#include "audio_capture.hpp"
+#include "zmq_publisher.hpp"
+#include "zmq_handler.hpp"
+#include "device_manager.hpp"
+#include "message_format.hpp"
 #include "version.h"
 
 // Global flag for signal handling

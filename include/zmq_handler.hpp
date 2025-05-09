@@ -8,9 +8,9 @@
 #include <functional>
 #include <unordered_map>
 #include <zmq.hpp>
-#include "audio_capture.h"
-#include "zmq_publisher.h"
-#include "message_format.h"
+#include "audio_capture.hpp"
+#include "zmq_publisher.hpp"
+#include "message_format.hpp"
 
 class ZmqHandler {
 public:

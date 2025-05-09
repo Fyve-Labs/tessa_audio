@@ -1,5 +1,5 @@
-#include "zmq_handler.h"
-#include "device_manager.h"
+#include "zmq_handler.hpp"
+#include "device_manager.hpp"
 #include <iostream>
 #include <sstream>
 #include <chrono>
