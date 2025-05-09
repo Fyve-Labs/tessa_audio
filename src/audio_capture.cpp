@@ -1,5 +1,5 @@
-#include "audio_capture.h"
-#include "device_manager.h"
+#include "audio_capture.hpp"
+#include "device_manager.hpp"
 #include <iostream>
 #include <chrono>
 #include <cstring>

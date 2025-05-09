@@ -1,4 +1,4 @@
-#include "zmq_publisher.h"
+#include "zmq_publisher.hpp"
 #include <iostream>
 #include <chrono>
 #include <cstring>
@@ -6,6 +6,7 @@
 ZmqPublisher::ZmqPublisher(const std::string& address, 
                          const std::string& topic,
                          std::shared_ptr<AudioBuffer> audioBuffer,
+                         std::shared_ptr<AudioCapture> audioCapture,
                          const std::string& serviceName,
                          const std::string& streamId)
     : address_(address),
@@ -13,6 +14,7 @@ ZmqPublisher::ZmqPublisher(const std::string& address,
       serviceName_(serviceName),
       streamId_(streamId),
       audioBuffer_(audioBuffer),
+      audioCapture_(audioCapture),
       running_(false),
       initialized_(false) {
 }
@@ -30,9 +32,15 @@ bool ZmqPublisher::initialize() {
         // Create ZMQ context and socket
         context_ = std::make_unique<zmq::context_t>(1);
         pubSocket_ = std::make_unique<zmq::socket_t>(*context_, ZMQ_PUB);
-        
-        // Set linger period to 0 for clean exit
+
+// see discussion in message_format.hpp
+#if defined(ZMQ_SOCKET_LINGER_METHOD)
+        // macOS/Darwin uses the newer API
         pubSocket_->set(zmq::sockopt::linger, 0);
+#else
+        // Linux and other platforms use the older API
+        pubSocket_->setsockopt(ZMQ_LINGER, 0);
+#endif
         
         // Bind socket to address
         pubSocket_->bind(address_);
@@ -100,6 +108,9 @@ void ZmqPublisher::publishAudioData(const std::vector<uint8_t>& data, uint64_t t
         // Add audio metadata
         std::map<std::string, nlohmann::json> metadata;
         metadata["unix_timestamp_ms"] = timestamp;
+        metadata["sample_rate"] = audioCapture_->getSampleRate();
+        metadata["channels"] = audioCapture_->getChannels();
+        metadata["bit_depth"] = audioCapture_->getBitDepth();
         msg.metadata = metadata;
         
         // Convert to JSON

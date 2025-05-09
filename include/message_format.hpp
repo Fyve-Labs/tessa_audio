@@ -59,4 +59,20 @@ std::string getCurrentTimestamp();
 
 } // namespace message_format
 
+
+// Platform-specific ZeroMQ socket option setting
+// - macOS/Darwin: Uses newer 'set' method with sockopt::linger
+// - Linux/others: Uses older 'setsockopt' method with ZMQ_LINGER
+//
+// If you encounter compilation errors, you may need to check ZeroMQ version:
+// 1. For ZeroMQ 4.3.1+: Use the 'set' method with zmq::sockopt::linger
+// 2. For older ZeroMQ: Use 'setsockopt' with ZMQ_LINGER
+// not defined, but would like these --- (ZMQ_VERSION_MAJOR >= 4 && ZMQ_VERSION_MINOR >= 3)
+#if defined(__APPLE__) || defined(__MACH__)
+    #define ZMQ_SOCKET_LINGER_METHOD 
+#else
+    #undef ZMQ_SOCKET_LINGER_METHOD
+#endif
+
+
 #endif // MESSAGE_FORMAT_H 

@@ -31,57 +31,103 @@ on:
 jobs:
   build:
     name: Build and Test
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{ matrix.runner || matrix.builder }}
     strategy:
+      fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        include:
+          - builder: ubuntu-latest
+            runner: ubuntu-latest
+            platform: linux/amd64
+            arch: amd64
+          # - builder: macos-latest
+          #   runner: macos-latest
+          #   arch: x86_64
+          - builder: debian-slim-armv7
+            runner: ubuntu-latest
+            platform: linux/arm/v7
+            arch: armv7
     outputs:
       artifact_name: ${{ steps.set-artifact-name.outputs.name }}
         
     steps:
     - uses: actions/checkout@v4
     
-    - name: Install Coverage Tools (Linux)
-      if: ${{ inputs.with_coverage && matrix.os == 'ubuntu-latest' }}
+    - name: Set up cross-compilation for armv7
+      if: matrix.arch == 'armv7'
       run: |
         sudo apt-get update
-        sudo apt-get install -y lcov
+        sudo apt-get install -y gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf 
+        echo "CC=arm-linux-gnueabihf-gcc" >> $GITHUB_ENV
+        echo "CXX=arm-linux-gnueabihf-g++" >> $GITHUB_ENV
+        echo "CMAKE_TOOLCHAIN_FILE=$GITHUB_WORKSPACE/cmake/toolchains/armv7.cmake" >> $GITHUB_ENV
     
-    - name: Install Coverage Tools (macOS)
-      if: ${{ inputs.with_coverage && matrix.os == 'macos-latest' }}
+    - name: Install Dependencies (Linux)
+      if: runner.os == 'Linux'
       run: |
-        brew install lcov
+        sudo apt-get update
+        sudo apt-get install -y libportaudio2 libportaudiocpp0 portaudio19-dev libzmq3-dev --arch=matrix.arch 
+        if [ "${{ inputs.with_coverage }}" = "true" ]; then
+          sudo apt-get install -y lcov
+        fi
+    
+    - name: Install Dependencies (macOS)
+      if: runner.os == 'macOS'
+      run: |
+        brew install portaudio zeromq
+        if [ "${{ inputs.with_coverage }}" = "true" ]; then
+          brew install lcov
+        fi
     
     - name: Build and Test
       run: |
         chmod +x scripts/build.sh
+        
+        # Set up build args
+        BUILD_ARGS="--build-type ${{ inputs.build_type }}"
+        if [ "${{ matrix.arch }}" = "armv7" ]; then
+          BUILD_ARGS="$BUILD_ARGS --toolchain-file $CMAKE_TOOLCHAIN_FILE"
+        fi
+        
+        # Add version args if requested
         if [ "${{ inputs.update_version }}" = "true" ]; then
-          scripts/build.sh --build-type ${{ inputs.build_type }} --update-version ${{ inputs.version }} --update-version-h ${{ inputs.version }}
-          if [ "${{ inputs.with_coverage }}" = "true" ]; then
-            scripts/test.sh --build-type ${{ inputs.build_type }} --coverage
-          else
-            scripts/test.sh --build-type ${{ inputs.build_type }}
-          fi
-        else
-          scripts/build.sh --build-type ${{ inputs.build_type }}
+          BUILD_ARGS="$BUILD_ARGS --update-version ${{ inputs.version }} --update-version-h ${{ inputs.version }}"
+        fi
+        
+        # Run the build
+        scripts/build.sh $BUILD_ARGS
+        
+        # Run tests if not on ARM (can't run ARM executables on x86 without emulation)
+        if [ "${{ matrix.arch }}" != "armv7" ]; then
           if [ "${{ inputs.with_coverage }}" = "true" ]; then
             scripts/test.sh --build-type ${{ inputs.build_type }} --coverage
           else
             scripts/test.sh --build-type ${{ inputs.build_type }}
           fi
         fi
+
+    - name: Generate Code Coverage Report
+      if: ${{ inputs.with_coverage && matrix.arch != 'armv7' }}
+      uses: irongut/CodeCoverageSummary@v1.3.0
+      with:
+        filename: build/coverage/lcov.filtered.info
+        badge: true
+        format: markdown
+        output: both
+        indicators: true
+        thresholds: '60 80'
     
     - name: Set Artifact Name
       id: set-artifact-name
       run: |
         if [ "${{ inputs.update_version }}" = "true" ]; then
-          echo "name=tessa-audio-${{ matrix.os }}-v${{ inputs.version }}" >> $GITHUB_OUTPUT
+          echo "name=tessa-audio-${{ matrix.arch }}-v${{ inputs.version }}" >> $GITHUB_OUTPUT
         else
           PR_NUMBER="${{ github.event.pull_request.number }}"
           if [ -n "$PR_NUMBER" ]; then
-            echo "name=tessa-audio-${{ matrix.os }}-pr-$PR_NUMBER" >> $GITHUB_OUTPUT
+            echo "name=tessa-audio-${{ matrix.arch }}-pr-$PR_NUMBER" >> $GITHUB_OUTPUT
           else
-            echo "name=tessa-audio-${{ matrix.os }}" >> $GITHUB_OUTPUT
+            echo "name=tessa-audio-${{ matrix.arch }}" >> $GITHUB_OUTPUT
           fi
         fi
       
@@ -94,23 +140,27 @@ jobs:
           build/lib*tessa_audio*
     
     - name: Upload Coverage Reports
-      if: ${{ inputs.with_coverage }}
+      if: ${{ inputs.with_coverage && matrix.arch != 'armv7' }}
       uses: actions/upload-artifact@v4
       with:
         name: ${{ steps.set-artifact-name.outputs.name }}-coverage
         path: |
           build/coverage/
+          code-coverage-results.md
     
+    - name: Add Coverage PR Comment
+      if: ${{ inputs.with_coverage && github.event_name == 'pull_request' && matrix.arch == 'amd64' }}
+      uses: marocchino/sticky-pull-request-comment@v2
+      with:
+        recreate: true
+        path: code-coverage-results.md
+        
     - name: Display Coverage Summary
-      if: ${{ inputs.with_coverage }}
+      if: ${{ inputs.with_coverage && matrix.arch != 'armv7' }}
       run: |
-        if [ -f "build/coverage/coverage_summary.md" ]; then
+        if [ -f "code-coverage-results.md" ]; then
           echo "::group::Code Coverage Summary"
-          cat build/coverage/coverage_summary.md
-          echo "::endgroup::"
-        elif [ -f "build/coverage/basic_coverage_summary.md" ]; then
-          echo "::group::Basic Code Coverage Summary"
-          cat build/coverage/basic_coverage_summary.md
+          cat code-coverage-results.md
           echo "::endgroup::"
         else
           echo "No coverage summary found"

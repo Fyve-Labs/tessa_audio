@@ -1,5 +1,72 @@
 ---
-description:
-globs:
+description: 
+globs: 
 alwaysApply: false
 ---
+# Building and Running AudioZMQ
+
+## Dependencies
+
+AudioZMQ requires the following libraries:
+- PortAudio (for audio capture)
+- ZeroMQ (for networking)
+- nlohmann/json (for JSON handling)
+
+### Ubuntu/Debian
+```bash
+sudo apt-get update
+sudo apt-get install -y libportaudio2 libportaudio-dev libzmq3-dev cmake build-essential
+```
+
+### macOS
+```bash
+brew install portaudio zeromq cppzmq cmake
+```
+
+## Building from Source
+
+1. Create a build directory:
+```bash
+mkdir -p build && cd build
+```
+
+2. Configure with CMake:
+```bash
+cmake .. -DCMAKE_BUILD_TYPE=Release
+```
+
+3. Build:
+```bash
+cmake --build . --config Release
+```
+
+4. Run tests (optional):
+```bash
+ctest -C Release --output-on-failure
+```
+
+## Running AudioZMQ
+
+From the build directory:
+```bash
+./tessa_audio --help       # Show help
+./tessa_audio --list-devices  # List available audio devices
+./tessa_audio               # Run with default settings
+```
+
+## Environment Configuration
+
+The application can be configured using environment variables or a `.env` file:
+- `AUDIO_DEVICE_NAME` - Name of the audio device to use
+- `AUDIO_DEVICE_INDEX` - Index of the audio device to use
+- `SAMPLE_RATE` - Sample rate in Hz (default: 44100)
+- `FRAMES_PER_BUFFER` - Audio buffer size (default: 1024)
+- `ZMQ_PUB_ENDPOINT` - ZeroMQ publisher endpoint (default: tcp://0.0.0.0:5555)
+- `ZMQ_ROUTER_ENDPOINT` - ZeroMQ router endpoint (default: tcp://0.0.0.0:5556)
+
+Example `.env` file:
+```
+AUDIO_DEVICE_NAME=Built-in Microphone
+SAMPLE_RATE=48000
+ZMQ_PUB_ENDPOINT=tcp://0.0.0.0:7555
+```

@@ -9,7 +9,7 @@
 // This helps ensure seamless audio output in case of brief interruptions
 class AudioBuffer {
 public:
-    explicit AudioBuffer(int bufferSizeMs, int sampleRate, int channels, int bitDepth);
+    explicit AudioBuffer(int sampleRate, int channels, int bitDepth, int bufferSizeMs = 5000, size_t bufferMinSend = 2048);
     
     // Add new audio data to the buffer
     void addData(const void* data, size_t size, uint64_t timestamp);
@@ -38,6 +38,7 @@ private:
     int sampleRate_;
     int channels_;
     int bytesPerSample_;
+    size_t bufferMinSend_;
 };
 
 #endif // AUDIO_BUFFER_H 

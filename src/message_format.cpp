@@ -1,4 +1,4 @@
-#include "message_format.h"
+#include "message_format.hpp"
 
 namespace message_format {
 

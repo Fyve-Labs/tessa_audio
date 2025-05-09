@@ -1,9 +1,10 @@
-#include "audio_buffer.h"
+#include "audio_buffer.hpp"
 #include <algorithm>
 #include <iostream>
 
-AudioBuffer::AudioBuffer(int bufferSizeMs, int sampleRate, int channels, int bitDepth)
-    : currentPos_(0), currentTimestamp_(0), sampleRate_(sampleRate), channels_(channels) {
+AudioBuffer::AudioBuffer(int sampleRate, int channels, int bitDepth, int bufferSizeMs, size_t bufferMinSend)
+    : currentPos_(0), currentTimestamp_(0), sampleRate_(sampleRate), 
+    channels_(channels), bufferMinSend_(bufferMinSend) {
     
     // Calculate bytes per sample
     bytesPerSample_ = (bitDepth / 8) * channels;
@@ -11,6 +12,7 @@ AudioBuffer::AudioBuffer(int bufferSizeMs, int sampleRate, int channels, int bit
     // Calculate buffer size in bytes
     int samplesPerMs = sampleRate / 1000;
     maxSizeBytes_ = bufferSizeMs * samplesPerMs * bytesPerSample_;
+    bufferMinSend_ = std::max(bufferMinSend, maxSizeBytes_ / 2);
     
     // Initialize buffer
     buffer_.resize(maxSizeBytes_, 0);
@@ -57,12 +59,14 @@ std::vector<uint8_t> AudioBuffer::getData(size_t maxSize, uint64_t& timestamp) {
         timestamp = currentTimestamp_;
         return result;
     }
-    
-    // Limit maxSize to buffer size
-    maxSize = std::min(maxSize, buffer_.size());
-    
     // Calculate how much data to return
     size_t dataToReturn = std::min(maxSize, buffer_.size());
+
+    // If the amount of data to return is less than the minimum send size, return the current timestamp
+    if (dataToReturn < bufferMinSend_) {
+        timestamp = currentTimestamp_;
+        return result;
+    }
     
     // Copy data from buffer
     result.resize(dataToReturn);

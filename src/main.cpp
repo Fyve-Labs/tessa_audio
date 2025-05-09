@@ -12,11 +12,11 @@
 #include <algorithm>
 #include <cstdlib>
 
-#include "audio_capture.h"
-#include "zmq_publisher.h"
-#include "zmq_handler.h"
-#include "device_manager.h"
-#include "message_format.h"
+#include "audio_capture.hpp"
+#include "zmq_publisher.hpp"
+#include "zmq_handler.hpp"
+#include "device_manager.hpp"
+#include "message_format.hpp"
 #include "version.h"
 
 // Global flag for signal handling
@@ -115,8 +115,9 @@ struct Arguments {
     int channels;
     int bitDepth;
     int bufferSize;
+    size_t bufferMinSend;
     bool listDevices;
-    bool echoStatus;
+    bool verbose;
     std::string envFile;
 };
 
@@ -135,9 +136,10 @@ void printUsage(const char* programName) {
               << "  --channels <number>              Number of audio channels (default: 2)\n"
               << "  --bit-depth <depth>              Audio bit depth (default: 16)\n"
               << "  --buffer-size <size>             Audio buffer size in ms (default: 100)\n"
-              << "  --echo-status                    Echo status messages to stdout\n"
+              << "  --buffer-min-send <size>         Audio buffer min send size in bytes (default: 2048)\n"
+              << "  --verbose                        Echo status messages to stdout\n"
               << "  --list-devices                   List available audio devices and exit\n"
-              << "  --env-file <file>                Load environment variables from file\n"
+              << "  --env <file>                     Load environment variables from file\n"
               << "  --help                           Show this help message\n"
               << "\nEnvironment variables:\n"
               << "  All options can also be set via environment variables using the\n"
@@ -151,7 +153,7 @@ Arguments parseArguments(int argc, char* argv[]) {
     
     // First check if we need to load a .env file
     for (int i = 1; i < argc; i++) {
-        if (strcmp(argv[i], "--env-file") == 0 && i + 1 < argc) {
+        if (strcmp(argv[i], "--env") == 0 && i + 1 < argc) {
             args.envFile = argv[++i];
             loadEnvFile(args.envFile);
             break;
@@ -172,6 +174,7 @@ Arguments parseArguments(int argc, char* argv[]) {
     std::string channelsStr = getEnvVar("CHANNELS", "2");
     std::string bitDepthStr = getEnvVar("BIT_DEPTH", "16");
     std::string bufferSizeStr = getEnvVar("BUFFER_SIZE", "100");
+    std::string bufferMinSendStr = getEnvVar("BUFFER_MIN_SEND", "2048");
     
     try {
         args.sampleRate = std::stoi(sampleRateStr);
@@ -196,10 +199,16 @@ Arguments parseArguments(int argc, char* argv[]) {
     } catch (...) {
         args.bufferSize = 100;
     }
+
+    try {
+        args.bufferMinSend = std::stoi(bufferMinSendStr);
+    } catch (...) {
+        args.bufferMinSend = 2048;
+    }
     
     // Boolean flags
     args.listDevices = getEnvVar("LIST_DEVICES", "false") == "true";
-    args.echoStatus = getEnvVar("ECHO_STATUS", "false") == "true";
+    args.verbose = getEnvVar("VERBOSE", "false") == "true";
     
     // Override with command line arguments
     for (int i = 1; i < argc; i++) {
@@ -225,11 +234,13 @@ Arguments parseArguments(int argc, char* argv[]) {
             args.bitDepth = std::stoi(argv[++i]);
         } else if (strcmp(argv[i], "--buffer-size") == 0 && i + 1 < argc) {
             args.bufferSize = std::stoi(argv[++i]);
-        } else if (strcmp(argv[i], "--echo-status") == 0) {
-            args.echoStatus = true;
+        } else if (strcmp(argv[i], "--buffer-min-send") == 0 && i + 1 < argc) {
+            args.bufferMinSend = std::stoi(argv[++i]);
+        } else if (strcmp(argv[i], "--verbose") == 0) {
+            args.verbose = true;
         } else if (strcmp(argv[i], "--list-devices") == 0) {
             args.listDevices = true;
-        } else if (strcmp(argv[i], "--env-file") == 0) {
+        } else if (strcmp(argv[i], "--env") == 0) {
             // Already handled above
             i++;
         } else if (strcmp(argv[i], "--help") == 0) {
@@ -304,19 +315,19 @@ int main(int argc, char* argv[]) {
     
     // Initialize components
     std::shared_ptr<AudioBuffer> audioBuffer = 
-        std::make_shared<AudioBuffer>(args.bufferSize, args.sampleRate, args.channels, args.bitDepth);
+        std::make_shared<AudioBuffer>(args.sampleRate, args.channels, args.bitDepth, args.bufferSize, args.bufferMinSend);
     
     std::shared_ptr<AudioCapture> audioCapture = 
         std::make_shared<AudioCapture>(args.inputDevice, args.sampleRate, args.channels, args.bitDepth, args.bufferSize);
     
     std::shared_ptr<ZmqPublisher> zmqPublisher = 
-        std::make_shared<ZmqPublisher>(args.pubAddress, args.pubTopic, audioBuffer, args.serviceName, args.streamId);
+        std::make_shared<ZmqPublisher>(args.pubAddress, args.pubTopic, audioBuffer, audioCapture, args.serviceName, args.streamId);
     
     std::shared_ptr<ZmqHandler> zmqHandler = 
         std::make_shared<ZmqHandler>(args.dealerAddress, args.dealerTopic, audioCapture, zmqPublisher);
     
     // Set echo status flag
-    zmqHandler->setEchoStatusMessages(args.echoStatus);
+    zmqHandler->setVerboseMode(args.verbose);
     
     // Initialize components
     if (!audioCapture->initialize()) {
@@ -366,7 +377,7 @@ int main(int argc, char* argv[]) {
     statusData["channels"] = audioCapture->getChannels();
     statusData["bit_depth"] = audioCapture->getBitDepth();
     statusData["device"] = audioCapture->getDeviceName();
-    zmqPublisher->publishStatusMessage(statusData, args.echoStatus);
+    zmqPublisher->publishStatusMessage(statusData, args.verbose);
     
     std::cout << "AudioZMQ started successfully" << std::endl;
     std::cout << "Publishing on " << args.pubAddress << " with topic '" << args.pubTopic << "'" << std::endl;
@@ -387,7 +398,7 @@ int main(int argc, char* argv[]) {
     
     // Send final status message indicating shutdown
     statusData["running"] = false;
-    zmqPublisher->publishStatusMessage(statusData, args.echoStatus);
+    zmqPublisher->publishStatusMessage(statusData, args.verbose);
     
     std::cout << "Shutdown complete" << std::endl;
     
