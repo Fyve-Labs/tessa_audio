@@ -12,10 +12,12 @@ jobs:
   build-and-test:
     name: Build and Test
     needs: versioning
-    uses: ./.github/workflows/build-test.yml
+    # uses: ./.github/workflows/build-test.yml
+    uses: ./.github/workflows/build-docker.yml
     with:
       build_type: 'Release'
       update_version: false # No need to update version in CMakeLists.txt since we update the header
+      with_coverage: true
       version: ${{ needs.versioning.outputs.new_version }}
           
   release:

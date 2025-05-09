@@ -11,6 +11,7 @@ RUN apt-get update && apt-get install -y \
     portaudio19-dev \
     libzmq3-dev \
     git \
+    lcov \
     && rm -rf /var/lib/apt/lists/*
 
 # Set build arguments
@@ -29,7 +30,7 @@ COPY . .
 RUN if [ -n "${TESTING_FLAG}" ]; then ./scripts/test.sh --build-type ${BUILD_TYPE}; else ./scripts/build.sh --build-type ${BUILD_TYPE}; fi
 
 # Final stage
-FROM debian:bullseye-slim as runner
+FROM debian:bullseye-slim AS runner
 
 # Install runtime dependencies
 RUN apt-get update && apt-get install -y \

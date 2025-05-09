@@ -93,7 +93,7 @@ jobs:
           TESTING_FLAG=""
           # Add coverage args if requested
           if [ "${{ inputs.with_coverage }}" = "true" ]; then
-            TESTING_FLAG="$TESTING_FLAG --with-tests"
+            TESTING_FLAG="1"
           fi
     
     - name: Extract binary from Docker image

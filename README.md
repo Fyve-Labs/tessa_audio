@@ -32,6 +32,9 @@ The easiest way to build Tessa Audio is to use the provided build script:
 # Build with options
 ./scripts/build.sh --build-type Debug --with-tests
 
+# example build within docker and testing
+docker build --build-arg TESTING_FLAG=1 -f docker/Dockerfile --tag tessa_audio .
+
 # See all available options
 ./scripts/build.sh --help
 ```
