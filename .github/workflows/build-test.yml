@@ -40,9 +40,9 @@ jobs:
             runner: ubuntu-latest
             platform: linux/amd64
             arch: amd64
-          - builder: macos-latest
-            runner: macos-latest
-            arch: x86_64
+          # - builder: macos-latest
+          #   runner: macos-latest
+          #   arch: x86_64
           - builder: debian-slim-armv7
             runner: ubuntu-latest
             platform: linux/arm/v7
