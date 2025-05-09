@@ -3,10 +3,10 @@
 
 namespace tessa_audio {
     // Version numbers
-    constexpr const char* VERSION = "0.1.1";
+    constexpr const char* VERSION = "0.1.2";
     constexpr int VERSION_MAJOR = 0;
     constexpr int VERSION_MINOR = 1;
-    constexpr int VERSION_PATCH = 1;
+    constexpr int VERSION_PATCH = 2;
     
     // Build information
     constexpr const char* BUILD_DATE = __DATE__;
