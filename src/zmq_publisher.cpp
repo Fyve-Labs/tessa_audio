@@ -32,9 +32,15 @@ bool ZmqPublisher::initialize() {
         // Create ZMQ context and socket
         context_ = std::make_unique<zmq::context_t>(1);
         pubSocket_ = std::make_unique<zmq::socket_t>(*context_, ZMQ_PUB);
-        
-        // Set linger period to 0 for clean exit
+
+// see discussion in message_format.hpp
+#if defined(ZMQ_SOCKET_LINGER_METHOD)
+        // macOS/Darwin uses the newer API
         pubSocket_->set(zmq::sockopt::linger, 0);
+#else
+        // Linux and other platforms use the older API
+        pubSocket_->setsockopt(ZMQ_LINGER, 0);
+#endif
         
         // Bind socket to address
         pubSocket_->bind(address_);

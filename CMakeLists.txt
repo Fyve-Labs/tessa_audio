@@ -1,11 +1,15 @@
 cmake_minimum_required(VERSION 3.10)
-project(tessa_audio VERSION 0.1.0)
+
+# pull version from source code
+file(READ "${CMAKE_CURRENT_SOURCE_DIR}/include/version.h" VERSION_CONTENT)
+string(REGEX MATCH "VERSION \"([0-9]+\\.[0-9]+\\.[0-9]+)\"" VERSION_MATCH ${VERSION_CONTENT})
+project(tessa_audio VERSION ${CMAKE_MATCH_1})
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Set CMake policies
-cmake_policy(SET CMP0135 NEW) # Use timestamps from extraction time for downloads
+# cmake_policy(SET CMP0135 NEW) # Use timestamps from extraction time for downloads
 
 # Add custom CMake module path
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules")
@@ -64,8 +68,8 @@ set(LIB_SOURCES
     src/message_format.cpp
 )
 
-# Create a shared library
-add_library(tessa_audio_lib SHARED ${LIB_SOURCES})
+# Create a static library
+add_library(tessa_audio_lib STATIC ${LIB_SOURCES})
 target_link_libraries(tessa_audio_lib
     ${ZeroMQ_LIBRARIES}
     ${PORTAUDIO_LIBRARIES}

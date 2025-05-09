@@ -30,7 +30,7 @@ The easiest way to build Tessa Audio is to use the provided build script:
 ./scripts/build.sh
 
 # Build with options
-./scripts/build.sh --build-type Debug --no-tests
+./scripts/build.sh --build-type Debug --with-tests
 
 # See all available options
 ./scripts/build.sh --help
@@ -39,7 +39,7 @@ The easiest way to build Tessa Audio is to use the provided build script:
 Options:
 - `--build-type TYPE` - Set build type (Debug, Release) [default: Release]
 - `--build-dir DIR` - Set build directory [default: build]
-- `--no-tests` - Skip running tests
+- `--with-tests` - Requst running tests and coverage
 - `--update-version VER` - Update version in CMakeLists.txt (e.g., 1.0.0)
 - `--dry-run` - Show commands without executing them
 - `--help` - Show help message
@@ -97,7 +97,7 @@ echo "INPUT_DEVICE=Built-in Microphone" > .env
 echo "SAMPLE_RATE=48000" >> .env
 
 # Run with .env file
-./build/tessa_audio --env-file .env
+./build/tessa_audio --env .env
 ```
 
 ## Python Examples

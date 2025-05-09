@@ -16,6 +16,9 @@ RUN apt-get update && apt-get install -y \
 # Set build arguments
 ARG BUILD_TYPE=Release
 ENV BUILD_TYPE=${BUILD_TYPE}
+# Optional flag to run tests (--with-tests)
+ARG TESTING_FLAG=""
+ENV TESTING_FLAG="${TESTING_FLAG}"
 
 # Create app directory
 WORKDIR /app
@@ -23,8 +26,7 @@ WORKDIR /app
 # Copy source code
 COPY . .
 
-# Build the application
-RUN ./scripts/build.sh --build-type ${BUILD_TYPE} --no-tests
+RUN if [ -n "${TESTING_FLAG}" ]; then ./scripts/test.sh --build-type ${BUILD_TYPE}; else ./scripts/build.sh --build-type ${BUILD_TYPE}; fi
 
 # Final stage
 FROM debian:bullseye-slim as runner
@@ -40,6 +42,7 @@ WORKDIR /app
 
 # Copy the built binary and necessary files from builder
 COPY --from=builder /app/build/tessa_audio /app/
+COPY --from=builder /app/build/coverage* /app/
 COPY --from=builder /app/LICENSE /app/
 COPY --from=builder /app/env.example /app/
 
@@ -52,5 +55,4 @@ ENV VERBOSE="true"
 EXPOSE 5555 5556
 
 # Set entry point
-ENTRYPOINT ["/app/tessa_audio"]
-CMD ["--verbose"] 
+CMD ["/app/tessa_audio", "--verbose"] 

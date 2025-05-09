@@ -86,9 +86,15 @@ protected:
             
             // Set shorter socket linger period for clean exit
             int linger = 100; // 100ms
+
+// see discussion in message_format.hpp
+#if defined(ZMQ_SOCKET_LINGER_METHOD)
             publisher.set(zmq::sockopt::linger, linger);
             router.set(zmq::sockopt::linger, linger);
-            
+#else
+            publisher.setsockopt(ZMQ_LINGER, linger);
+            router.setsockopt(ZMQ_LINGER, linger);
+#endif
             // Poll items for the router socket
             zmq::pollitem_t items[] = {
                 { static_cast<void*>(router), 0, ZMQ_POLLIN, 0 }
@@ -212,11 +218,17 @@ TEST_F(ZmqConnectivityTest, CanSubscribeAndReceiveMessages) {
     // Create a subscriber
     zmq::socket_t subscriber(*context, zmq::socket_type::sub);
     subscriber.connect(pubEndpoint);
-    subscriber.set(zmq::sockopt::subscribe, "heartbeat");
-    
     // Set shorter linger period for clean exit
     int linger = 100; // 100ms
+
+// see discussion in message_format.hpp
+#if defined(ZMQ_SOCKET_LINGER_METHOD)
+    subscriber.set(zmq::sockopt::subscribe, "heartbeat");
     subscriber.set(zmq::sockopt::linger, linger);
+#else
+    subscriber.setsockopt(ZMQ_SUBSCRIBE, "heartbeat", sizeof("heartbeat"));
+    subscriber.setsockopt(ZMQ_LINGER, linger);
+#endif
     
     // Poll for messages
     zmq::pollitem_t items[] = {
@@ -288,7 +300,13 @@ TEST_F(ZmqConnectivityTest, CanSendCommandsAndGetResponses) {
     
     // Set shorter linger period for clean exit
     int linger = 100; // 100ms
+
+// see discussion in message_format.hpp
+#if defined(ZMQ_SOCKET_LINGER_METHOD)
     dealer.set(zmq::sockopt::linger, linger);
+#else
+    dealer.setsockopt(ZMQ_LINGER, linger);
+#endif
     
     // Send a PING command
     std::string topic = "control";

@@ -17,7 +17,7 @@ NEW_VERSION=""
 UPDATE_VERSION_H=false
 DRY_RUN=false
 VERBOSE=false
-COVERAGE=false
+COVERAGE=true
 
 # Parse command line arguments
 while [[ $# -gt 0 ]]; do
@@ -52,8 +52,8 @@ while [[ $# -gt 0 ]]; do
       VERBOSE=true
       shift
       ;;
-    --coverage)
-      COVERAGE=true
+    --no-coverage)
+      COVERAGE=false
       shift
       ;;
     --help)
@@ -66,7 +66,7 @@ while [[ $# -gt 0 ]]; do
       echo "  --update-version-h VER Update version in version.h (e.g., 1.0.0)"
       echo "  --dry-run             Show commands without executing them"
       echo "  --verbose             Show verbose output from tests"
-      echo "  --coverage            Generate code coverage reports"
+      echo "  --no-coverage         Skip code coverage reports"
       echo "  --help                Show this help message"
       exit 0
       ;;

@@ -92,6 +92,11 @@ jobs:
         tags: tessa-audio-builder:latest
         build-args: |
           BUILD_TYPE=${{ inputs.build_type }}
+          TESTING_FLAG=""
+          # Add coverage args if requested
+          if [ "${{ inputs.with_coverage }}" = "true" ]; then
+            TESTING_FLAG="$TESTING_FLAG --with-tests"
+          fi
     
     - name: Extract binary from Docker image
       run: |
@@ -106,7 +111,7 @@ jobs:
         
         # Copy any library files
         docker cp $CONTAINER_ID:/app/build/lib build/ || true
-        
+
         # Remove the container
         docker rm $CONTAINER_ID
     
@@ -131,3 +136,4 @@ jobs:
         path: |
           build/tessa_audio
           build/lib*tessa_audio* 
+          build/coverage

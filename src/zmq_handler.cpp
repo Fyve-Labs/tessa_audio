@@ -40,8 +40,14 @@ bool ZmqHandler::initialize() {
         context_ = std::make_unique<zmq::context_t>(1);
         dealerSocket_ = std::make_unique<zmq::socket_t>(*context_, ZMQ_ROUTER);
         
+// see discussion in message_format.hpp
+#if defined(ZMQ_SOCKET_LINGER_METHOD)
         // Set linger period to 0 for clean exit
         dealerSocket_->set(zmq::sockopt::linger, 0);
+#else
+        // Set linger period to 0 for clean exit
+        dealerSocket_->setsockopt(ZMQ_LINGER, 0);
+#endif
         
         // Bind socket to address
         dealerSocket_->bind(address_);

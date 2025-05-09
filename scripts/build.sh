@@ -11,7 +11,6 @@ set -e
 BUILD_TYPE="Release"
 BUILD_DIR="build"
 WORKSPACE_DIR="$(pwd)"
-RUN_TESTS=true
 UPDATE_VERSION=false
 NEW_VERSION=""
 UPDATE_VERSION_H=false
@@ -28,10 +27,6 @@ while [[ $# -gt 0 ]]; do
     --build-dir)
       BUILD_DIR="$2"
       shift 2
-      ;;
-    --no-tests)
-      RUN_TESTS=false
-      shift
       ;;
     --update-version)
       UPDATE_VERSION=true
@@ -56,7 +51,6 @@ while [[ $# -gt 0 ]]; do
       echo "Options:"
       echo "  --build-type TYPE     Set build type (Debug, Release) [default: Release]"
       echo "  --build-dir DIR       Set build directory [default: build]"
-      echo "  --no-tests            Skip running tests"
       echo "  --update-version VER  Update version in CMakeLists.txt (e.g., 1.0.0)"
       echo "  --update-version-h VER Update version in version.h (e.g., 1.0.0)"
       echo "  --toolchain-file FILE Path to CMake toolchain file for cross-compilation"

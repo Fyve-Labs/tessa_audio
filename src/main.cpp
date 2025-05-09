@@ -137,10 +137,9 @@ void printUsage(const char* programName) {
               << "  --bit-depth <depth>              Audio bit depth (default: 16)\n"
               << "  --buffer-size <size>             Audio buffer size in ms (default: 100)\n"
               << "  --buffer-min-send <size>         Audio buffer min send size in bytes (default: 2048)\n"
-              << "  --echo-status                    Echo status messages to stdout\n"
               << "  --verbose                        Echo status messages to stdout\n"
               << "  --list-devices                   List available audio devices and exit\n"
-              << "  --env-file <file>                Load environment variables from file\n"
+              << "  --env <file>                     Load environment variables from file\n"
               << "  --help                           Show this help message\n"
               << "\nEnvironment variables:\n"
               << "  All options can also be set via environment variables using the\n"
@@ -154,7 +153,7 @@ Arguments parseArguments(int argc, char* argv[]) {
     
     // First check if we need to load a .env file
     for (int i = 1; i < argc; i++) {
-        if (strcmp(argv[i], "--env-file") == 0 && i + 1 < argc) {
+        if (strcmp(argv[i], "--env") == 0 && i + 1 < argc) {
             args.envFile = argv[++i];
             loadEnvFile(args.envFile);
             break;
@@ -241,7 +240,7 @@ Arguments parseArguments(int argc, char* argv[]) {
             args.verbose = true;
         } else if (strcmp(argv[i], "--list-devices") == 0) {
             args.listDevices = true;
-        } else if (strcmp(argv[i], "--env-file") == 0) {
+        } else if (strcmp(argv[i], "--env") == 0) {
             // Already handled above
             i++;
         } else if (strcmp(argv[i], "--help") == 0) {
