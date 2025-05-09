@@ -1,5 +1,61 @@
 ---
-description:
-globs:
+description: 
+globs: 
 alwaysApply: false
 ---
+# AudioZMQ Message Format
+
+The message format for the audio streaming service follows the design specified in [docs/product.md](mdc:docs/product.md) and is defined in [include/message_format.h](mdc:include/message_format.h).
+
+## Message Types
+
+AudioZMQ uses several message types:
+- `AUDIO_DATA` - For streaming audio samples
+- `STATUS` - For status updates and metadata
+- `COMMAND` - For control commands
+- `HEARTBEAT` - For service health monitoring
+
+## Message Structure
+
+Messages consist of:
+1. A ZeroMQ topic frame (string)
+2. A JSON metadata frame containing message type, timestamp, and metadata
+3. An optional binary data frame for audio samples
+
+### Example JSON Format:
+
+#### Audio Data Message
+```json
+{
+  "message_type": "audio_data",
+  "timestamp": 1638291600.123,
+  "sample_rate": 44100,
+  "channels": 2,
+  "format": "int16",
+  "frames": 1024
+}
+```
+
+#### Status Message
+```json
+{
+  "message_type": "status",
+  "timestamp": 1638291600.234,
+  "service": "audio_capture",
+  "status": {
+    "audio_device": "Built-in Microphone",
+    "is_running": true,
+    "buffer_usage": 0.23
+  }
+}
+```
+
+## ZeroMQ Communication Patterns
+
+1. **PUB/SUB** - For streaming audio data and status updates
+   - Publisher endpoint: `tcp://0.0.0.0:5555` (configurable)
+   - Topics: "audio", "status", "heartbeat"
+
+2. **ROUTER/DEALER** - For bidirectional command handling
+   - Router endpoint: `tcp://0.0.0.0:5556` (configurable)
+   - Commands: "START", "STOP", "SET_DEVICE", etc.

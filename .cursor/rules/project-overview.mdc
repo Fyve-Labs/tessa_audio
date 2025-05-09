@@ -1,5 +1,41 @@
 ---
-description:
-globs:
+description: 
+globs: 
 alwaysApply: false
 ---
+# AudioZMQ: Audio Capture & Streaming Service
+
+AudioZMQ is a C++ service for capturing audio from system input devices and streaming it over ZeroMQ. It follows the requirements specified in [docs/product.md](mdc:docs/product.md).
+
+## Core Components
+
+- **Audio Capture**: Captures audio using PortAudio library
+- **ZMQ Communication**: Uses ZeroMQ for streaming data and command handling
+- **Cross-platform**: Supports macOS and Linux
+- **Message Format**: Structured data format with JSON metadata and binary audio data
+
+## Key Files
+
+- Main executable: [src/main.cpp](mdc:src/main.cpp)
+- Audio capture: [src/audio_capture.cpp](mdc:src/audio_capture.cpp)
+- ZMQ communication: [src/zmq_publisher.cpp](mdc:src/zmq_publisher.cpp) and [src/zmq_handler.cpp](mdc:src/zmq_handler.cpp)
+- Device management: [src/device_manager.cpp](mdc:src/device_manager.cpp)
+- Message format: [include/message_format.h](mdc:include/message_format.h)
+
+## Build System
+
+The project uses CMake for building:
+- [CMakeLists.txt](mdc:CMakeLists.txt) - Main configuration
+- [tests/CMakeLists.txt](mdc:tests/CMakeLists.txt) - Test configuration
+
+## Testing
+
+Tests are located in the [tests](mdc:tests) directory:
+- [tests/zmq_connectivity_test.cpp](mdc:tests/zmq_connectivity_test.cpp)
+- [tests/device_listing_test.cpp](mdc:tests/device_listing_test.cpp)
+
+## CI/CD
+
+GitHub Actions workflows for continuous integration:
+- [.github/workflows/pr.yml](mdc:.github/workflows/pr.yml) - Pull request checks
+- [.github/workflows/main.yml](mdc:.github/workflows/main.yml) - Main branch processing with versioning
