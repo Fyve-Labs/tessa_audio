@@ -48,14 +48,12 @@ jobs:
       matrix:
         include:
           - builder: ubuntu-latest
-            runner: ubuntu-latest
             platform: linux/amd64
             arch: amd64
           # - builder: macos-latest
           #   runner: macos-latest
-          #   arch: x86_64
-          - builder: debian-slim-armv7
-            runner: debian-slim-armv7
+          #   arch: arm64
+          - builder: ubuntu-latest
             platform: linux/arm/v7
             arch: armv7
     outputs:
@@ -107,10 +105,13 @@ jobs:
         mkdir -p build/
         
         # Copy the binary from the container
-        docker cp $CONTAINER_ID:/app/build/tessa_audio build/
+        docker cp $CONTAINER_ID:/app/tessa_audio build/
         
         # Copy any library files
-        docker cp $CONTAINER_ID:/app/build/lib build/ || true
+        docker cp $CONTAINER_ID:/app/lib build/ || true
+
+        # Copy any testing files
+        docker cp $CONTAINER_ID:/app/coverage build/ || true
 
         # Remove the container
         docker rm $CONTAINER_ID
