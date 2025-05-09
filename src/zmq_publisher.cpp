@@ -6,6 +6,7 @@
 ZmqPublisher::ZmqPublisher(const std::string& address, 
                          const std::string& topic,
                          std::shared_ptr<AudioBuffer> audioBuffer,
+                         std::shared_ptr<AudioCapture> audioCapture,
                          const std::string& serviceName,
                          const std::string& streamId)
     : address_(address),
@@ -13,6 +14,7 @@ ZmqPublisher::ZmqPublisher(const std::string& address,
       serviceName_(serviceName),
       streamId_(streamId),
       audioBuffer_(audioBuffer),
+      audioCapture_(audioCapture),
       running_(false),
       initialized_(false) {
 }
@@ -100,6 +102,9 @@ void ZmqPublisher::publishAudioData(const std::vector<uint8_t>& data, uint64_t t
         // Add audio metadata
         std::map<std::string, nlohmann::json> metadata;
         metadata["unix_timestamp_ms"] = timestamp;
+        metadata["sample_rate"] = audioCapture_->getSampleRate();
+        metadata["channels"] = audioCapture_->getChannels();
+        metadata["bit_depth"] = audioCapture_->getBitDepth();
         msg.metadata = metadata;
         
         // Convert to JSON

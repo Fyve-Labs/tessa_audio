@@ -15,7 +15,7 @@ ZmqHandler::ZmqHandler(const std::string& address,
       zmqPublisher_(zmqPublisher),
       running_(false),
       initialized_(false),
-      echoStatusMessages_(false) {
+      verboseMode_(false) {
     
     // Set up command handlers
     commandHandlers_["STATUS"] = [this](const std::string&) { return handleStatus(); };
@@ -23,7 +23,7 @@ ZmqHandler::ZmqHandler(const std::string& address,
     commandHandlers_["STOP"] = [this](const std::string&) { return handleStop(); };
     commandHandlers_["START"] = [this](const std::string&) { return handleStart(); };
     commandHandlers_["GET_DEVICES"] = [this](const std::string&) { return handleGetDevices(); };
-    commandHandlers_["SET_ECHO_STATUS"] = [this](const std::string& args) { return handleSetEchoStatus(args); };
+    commandHandlers_["SET_VERBOSE"] = [this](const std::string& args) { return handleSetVerbose(args); };
 }
 
 ZmqHandler::~ZmqHandler() {
@@ -186,7 +186,7 @@ std::string ZmqHandler::handleStatus() {
     statusData["device"] = audioCapture_->getDeviceName();
     
     // Publish status message
-    zmqPublisher_->publishStatusMessage(statusData, echoStatusMessages_.load());
+    zmqPublisher_->publishStatusMessage(statusData, verboseMode_.load());
     
     // Return simple status string for DEALER response
     std::stringstream ss;
@@ -221,7 +221,7 @@ std::string ZmqHandler::handleSetSampleRate(const std::string& args) {
             statusData["bit_depth"] = audioCapture_->getBitDepth();
             statusData["device"] = audioCapture_->getDeviceName();
             statusData["event"] = "sample_rate_changed";
-            zmqPublisher_->publishStatusMessage(statusData, echoStatusMessages_.load());
+            zmqPublisher_->publishStatusMessage(statusData, verboseMode_.load());
             
             return "OK: Sample rate set to " + std::to_string(sampleRate);
         } else {
@@ -242,7 +242,7 @@ std::string ZmqHandler::handleStop() {
         statusData["bit_depth"] = audioCapture_->getBitDepth();
         statusData["device"] = audioCapture_->getDeviceName();
         statusData["event"] = "stopped";
-        zmqPublisher_->publishStatusMessage(statusData, echoStatusMessages_.load());
+        zmqPublisher_->publishStatusMessage(statusData, verboseMode_.load());
         
         return "OK: Audio capture stopped";
     } else {
@@ -260,7 +260,7 @@ std::string ZmqHandler::handleStart() {
         statusData["bit_depth"] = audioCapture_->getBitDepth();
         statusData["device"] = audioCapture_->getDeviceName();
         statusData["event"] = "started";
-        zmqPublisher_->publishStatusMessage(statusData, echoStatusMessages_.load());
+        zmqPublisher_->publishStatusMessage(statusData, verboseMode_.load());
         
         return "OK: Audio capture started";
     } else {
@@ -294,7 +294,7 @@ std::string ZmqHandler::handleGetDevices() {
     statusData["event"] = "device_list";
     
     // Publish status message
-    zmqPublisher_->publishStatusMessage(statusData, echoStatusMessages_.load());
+    zmqPublisher_->publishStatusMessage(statusData, verboseMode_.load());
     
     // Also return a text version for the DEALER socket
     std::stringstream ss;
@@ -311,13 +311,14 @@ std::string ZmqHandler::handleGetDevices() {
     return ss.str();
 }
 
-std::string ZmqHandler::handleSetEchoStatus(const std::string& args) {
+
+std::string ZmqHandler::handleSetVerbose(const std::string& args) {
     if (args == "on" || args == "true" || args == "1") {
-        echoStatusMessages_ = true;
-        return "OK: Status echo enabled";
+        verboseMode_ = true;
+        return "OK: Verbose mode enabled";
     } else if (args == "off" || args == "false" || args == "0") {
-        echoStatusMessages_ = false;
-        return "OK: Status echo disabled";
+        verboseMode_ = false;
+        return "OK: Verbose mode disabled";
     } else {
         return "ERROR: Invalid argument. Use 'on'/'off', 'true'/'false', or '1'/'0'";
     }

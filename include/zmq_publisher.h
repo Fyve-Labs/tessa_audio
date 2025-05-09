@@ -8,6 +8,7 @@
 #include <memory>
 #include <zmq.hpp>
 #include "audio_buffer.h"
+#include "audio_capture.h"
 #include "message_format.h"
 
 class ZmqPublisher {
@@ -15,6 +16,7 @@ public:
     ZmqPublisher(const std::string& address, 
                  const std::string& topic,
                  std::shared_ptr<AudioBuffer> audioBuffer,
+                 std::shared_ptr<AudioCapture> audioCapture,
                  const std::string& serviceName,
                  const std::string& streamId = "");
     ~ZmqPublisher();
@@ -45,7 +47,7 @@ private:
     std::unique_ptr<zmq::socket_t> pubSocket_;
     
     std::shared_ptr<AudioBuffer> audioBuffer_;
-    
+    std::shared_ptr<AudioCapture> audioCapture_;
     std::thread publishThread_;
     std::atomic<bool> running_;
     std::atomic<bool> initialized_;

@@ -26,8 +26,8 @@ public:
     bool isRunning() const;
     
     // Flag to control whether to echo status messages to stdout
-    void setEchoStatusMessages(bool echo) { echoStatusMessages_ = echo; }
-    bool getEchoStatusMessages() const { return echoStatusMessages_; }
+    void setVerboseMode(bool verbose) { verboseMode_ = verbose; }
+    bool getVerboseMode() const { return verboseMode_; }
     
     // Getters
     std::string getAddress() const { return address_; }
@@ -42,7 +42,7 @@ private:
     std::string handleStop();
     std::string handleStart();
     std::string handleGetDevices();
-    std::string handleSetEchoStatus(const std::string& args);
+    std::string handleSetVerbose(const std::string& args);
     
     std::string address_;
     std::string topic_;
@@ -56,7 +56,7 @@ private:
     std::thread handleThread_;
     std::atomic<bool> running_;
     std::atomic<bool> initialized_;
-    std::atomic<bool> echoStatusMessages_;
+    std::atomic<bool> verboseMode_;
     
     // Map of command strings to handler functions
     std::unordered_map<
