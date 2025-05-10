@@ -107,15 +107,25 @@ jobs:
         # Copy the binary from the container
         docker cp $CONTAINER_ID:/app/tessa_audio build/
         
-        # Copy any library files
-        docker cp $CONTAINER_ID:/app/lib build/ || true
-
-        # Copy any testing files
-        docker cp $CONTAINER_ID:/app/coverage build/ || true
+        # Add coverage args if requested
+        if [ "${{ inputs.with_coverage }}" = "true" ]; then
+          docker cp $CONTAINER_ID:/app/coverage build/coverage || true
+        fi
 
         # Remove the container
         docker rm $CONTAINER_ID
-    
+
+    - name: Generate Code Coverage Report
+      if: ${{ inputs.with_coverage }}
+      uses: irongut/CodeCoverageSummary@v1.3.0
+      with:
+        filename: build/coverage/lcov.filtered.info
+        badge: true
+        format: markdown
+        output: both
+        indicators: true
+        thresholds: '60 80'
+
     - name: Set Artifact Name
       id: set-artifact-name
       run: |
@@ -136,5 +146,4 @@ jobs:
         name: ${{ steps.set-artifact-name.outputs.name }}
         path: |
           build/tessa_audio
-          build/lib*tessa_audio* 
-          build/coverage
+          # build/coverage
