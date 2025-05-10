@@ -162,18 +162,20 @@ if [[ "$COVERAGE" == true && "$RUN_TESTS" == true ]]; then
     mkdir -p coverage
     
     # Check if we're using GCC or Clang
-    if command -v gcov &> /dev/null && command -v lcov &> /dev/null; then
-      echo "Using lcov/gcov for coverage..."
+    # if command -v gcov &> /dev/null && command -v lcov &> /dev/null; then
+    #   echo "Using lcov/gcov for coverage..."
       
-      # Capture coverage data
-      lcov --directory . --capture --output-file coverage/lcov.info --ignore-errors inconsistent,unsupported,format,unused
+    #   # Capture coverage data
+    #   lcov --directory . --capture --output-file coverage/lcov.info --ignore-errors inconsistent,unsupported,format,unused
       
-      # Filter out system headers and test files
-      lcov --remove coverage/lcov.info '/usr/*' '/Library/*' '*/deps/*' '*/tests/*' --output-file coverage/lcov.filtered.info --ignore-errors inconsistent,unsupported,format,unused
+    #   # Filter out system headers and test files
+    #   lcov --remove coverage/lcov.info '/usr/*' '/Library/*' '*/deps/*' '*/tests/*' --output-file coverage/lcov.filtered.info --ignore-errors unsupported,format,unused
       
-      echo "Raw coverage data: $BUILD_DIR/coverage/lcov.filtered.info"
+    #   echo "Raw coverage data: $BUILD_DIR/coverage/lcov.filtered.info"
       
-    elif command -v llvm-cov &> /dev/null; then
+    # el
+    # 
+    if command -v llvm-cov &> /dev/null; then
       echo "Using llvm-cov for coverage..."
       
       # Find all executables with coverage data
