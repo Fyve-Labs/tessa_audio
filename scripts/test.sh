@@ -162,20 +162,25 @@ if [[ "$COVERAGE" == true && "$RUN_TESTS" == true ]]; then
     mkdir -p coverage
     
     # Check if we're using GCC or Clang
-    # if command -v gcov &> /dev/null && command -v lcov &> /dev/null; then
-    #   echo "Using lcov/gcov for coverage..."
+    if command -v gcov &> /dev/null && command -v lcov &> /dev/null; then
+      echo "Using lcov/gcov for coverage..."
       
-    #   # Capture coverage data
-    #   lcov --directory . --capture --output-file coverage/lcov.info --ignore-errors inconsistent,unsupported,format,unused
+      # Capture coverage data
+      if ! lcov --directory . --capture --output-file coverage/lcov.info --exclude "*/deps/*"; then
+        echo "First attempt to capture coverage data failed. Trying an alternative method... (likely MacOS)"
+        # Alternative method to capture coverage data
+        lcov --directory . --capture --output-file coverage/lcov.info --exclude "*/deps/*" --ignore-errors inconsistent,unsupported,format,unused,empty
+      fi
       
-    #   # Filter out system headers and test files
-    #   lcov --remove coverage/lcov.info '/usr/*' '/Library/*' '*/deps/*' '*/tests/*' --output-file coverage/lcov.filtered.info --ignore-errors unsupported,format,unused
+      # Filter out system headers and test files
+      echo "Filtering out system headers and test files"
+      if ! lcov --remove coverage/lcov.info "/usr/*" "/Library/*" "*/deps/*" "*/tests/*" --output-file coverage/lcov.filtered.info ; then
+        echo "First attempt to capture coverage data failed. Trying an alternative method... (likely MacOS)"
+        lcov --remove coverage/lcov.info "/usr/*" "/Library/*" "*/deps/*" "*/tests/*" --output-file coverage/lcov.filtered.info --ignore-errors inconsistent,unsupported,format,unused,empty
+      fi
+      echo "Coverage data: $BUILD_DIR/coverage/lcov.filtered.info"
       
-    #   echo "Raw coverage data: $BUILD_DIR/coverage/lcov.filtered.info"
-      
-    # el
-    # 
-    if command -v llvm-cov &> /dev/null; then
+    elif command -v llvm-cov &> /dev/null; then
       echo "Using llvm-cov for coverage..."
       
       # Find all executables with coverage data
@@ -214,7 +219,7 @@ if [[ "$DRY_RUN" == true ]]; then
 else
   pushd "$BUILD_DIR" > /dev/null
   ./tessa_audio --help || exit 1
-  # Try listing devices but don't fail if this doesn't work
+  # Try listing devices but no fail 
   ./tessa_audio --list-devices || echo "Device listing failed, possibly due to missing audio hardware"
   popd > /dev/null
 fi

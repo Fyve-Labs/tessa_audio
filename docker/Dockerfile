@@ -12,6 +12,7 @@ RUN apt-get update && apt-get install -y \
     libzmq3-dev \
     git \
     lcov \
+    llvm-9 \
     && rm -rf /var/lib/apt/lists/*
 
 # Set build arguments
@@ -43,7 +44,7 @@ WORKDIR /app
 
 # Copy the built binary and necessary files from builder
 COPY --from=builder /app/build/tessa_audio /app/
-COPY --from=builder /app/build/coverage* /app/
+COPY --from=builder /app/build/coverage* /app/coverage/
 COPY --from=builder /app/LICENSE /app/
 COPY --from=builder /app/env.example /app/
 
